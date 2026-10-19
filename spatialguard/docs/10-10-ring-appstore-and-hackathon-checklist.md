@@ -37,7 +37,7 @@ Do not check an item merely because a mock, replay, or automated test passed. Ad
 
 ## Current foundation
 
-- [x] SpatialGuard is deployed over HTTPS at `https://spatialguard-production.up.railway.app/`.
+- [x] SpatialGuard is deployed over HTTPS at `https://pathlight.up.railway.app/`.
 - [x] A real Ring account completed account linking through the official private-app flow.
 - [x] Authorized device discovery, a real snapshot, and one bounded live-video session were observed with a physical Ring camera.
 - [x] Webhook signature verification, event deduplication, bounded session cleanup, token handling, and replay behavior have automated coverage.

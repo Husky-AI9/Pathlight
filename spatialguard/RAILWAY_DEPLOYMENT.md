@@ -14,8 +14,8 @@ boundary needed for a later split deployment.
 3. Set these variables, substituting the generated Railway domain:
 
 ```text
-SPATIALGUARD_ALLOWED_HOSTS=spatialguard-production.up.railway.app
-SPATIALGUARD_ORIGIN=https://spatialguard-production.up.railway.app
+SPATIALGUARD_ALLOWED_HOSTS=pathlight.up.railway.app,spatialguard-production.up.railway.app
+SPATIALGUARD_ORIGIN=https://pathlight.up.railway.app
 SPATIALGUARD_DATA_DIR=/data
 SPATIALGUARD_DB=/data/spatialguard.sqlite3
 TWINFORGE_DB=/data/twinforge.sqlite3
@@ -84,10 +84,10 @@ RING_WEBHOOK_SECRET=
 After a successful deploy, enter these HTTPS endpoints in the private Ring app:
 
 ```text
-https://spatialguard-production.up.railway.app/ring/link
-https://spatialguard-production.up.railway.app/ring/home
-https://spatialguard-production.up.railway.app/ring/token
-https://spatialguard-production.up.railway.app/ring/webhook
+https://pathlight.up.railway.app/ring/link
+https://pathlight.up.railway.app/ring/home
+https://pathlight.up.railway.app/ring/token
+https://pathlight.up.railway.app/ring/webhook
 ```
 
 Open SpatialGuard, create an account or sign in, then use **Settings →
@@ -100,7 +100,7 @@ before they are written to the mounted SQLite database.
 Build the release only after the Railway URL works in a browser:
 
 ```powershell
-$env:SPATIALGUARD_API_URL = "https://spatialguard-production.up.railway.app"
+$env:SPATIALGUARD_API_URL = "https://pathlight.up.railway.app"
 ./spatialguard/scripts/android.ps1 -Release
 ```
 

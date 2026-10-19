@@ -24,7 +24,7 @@ public class SecureSessionPlugin: CAPPlugin, CAPBridgedPlugin {
            configured.hasPrefix("https://") {
             return configured
         }
-        return "https://spatialguard-production.up.railway.app"
+        return "https://pathlight.up.railway.app"
     }
 
     @objc public func read(_ call: CAPPluginCall) {

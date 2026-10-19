@@ -1,6 +1,6 @@
 # Test SpatialGuard on iOS
 
-The iOS app uses the same React interface, colors, maps, and camera screens as Android. It packages those shared screens inside Capacitor and connects to the hosted Railway service at `https://spatialguard-production.up.railway.app`. Sign-in tokens are stored in the iOS Keychain.
+The iOS app uses the same React interface, colors, maps, and camera screens as Android. It packages those shared screens inside Capacitor and connects to the hosted Railway service at `https://pathlight.up.railway.app`. Sign-in tokens are stored in the iOS Keychain.
 
 ## Requirements
 

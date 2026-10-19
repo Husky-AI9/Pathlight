@@ -2,7 +2,7 @@
 
 Native React Native screens targeting Expo Go SDK 57. The application no longer
 loads the hosted workspace in a WebView. It calls the existing Railway API at
-`https://spatialguard-production.up.railway.app` and stores the revocable session
+`https://pathlight.up.railway.app` and stores the revocable session
 in Expo SecureStore. No backend deployment is needed for this preview.
 
 The current release scope is Android-first for hackathon testing and submission.

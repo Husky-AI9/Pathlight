@@ -9,7 +9,7 @@
 	<key>CFBundleDisplayName</key>
         <string>SpatialGuard</string>
   <key>SpatialGuardAPIURL</key>
-  <string>https://spatialguard-production.up.railway.app</string>
+  <string>https://pathlight.up.railway.app</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

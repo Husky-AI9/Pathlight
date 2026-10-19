@@ -1,6 +1,6 @@
 # Ring Appstore review: build settings, reviewer notes and listing text
 
-**Prepared:** October 1, 2026 · **Product:** Pathlight · **Hosted at:** https://spatialguard-production.up.railway.app
+**Prepared:** October 1, 2026 · **Product:** Pathlight · **Hosted at:** https://pathlight.up.railway.app
 
 This page is the practical companion to `10-10-ring-appstore-and-hackathon-checklist.md`.
 It covers what the code now does for review, the Railway settings for the build Ring
@@ -33,7 +33,7 @@ can take in the Ring Developer Portal.
 
 **Account creation**
 
-> Open https://spatialguard-production.up.railway.app and choose "Create account". Enter any email you can read and a password of at least 8 characters, then confirm the email from the verification message. A short onboarding asks which permissions to grant: turn on "Ring cameras" and "Foot-traffic analysis" to test the full experience ("Activity labels" is optional). You can change these later in Settings → Privacy. To try the product without a Ring account first, choose "Try the demo home", which loads sample data clearly labelled "Demo".
+> Open https://pathlight.up.railway.app and choose "Create account". Enter any email you can read and a password of at least 8 characters, then confirm the email from the verification message. A short onboarding asks which permissions to grant: turn on "Ring cameras" and "Foot-traffic analysis" to test the full experience ("Activity labels" is optional). You can change these later in Settings → Privacy. To try the product without a Ring account first, choose "Try the demo home", which loads sample data clearly labelled "Demo".
 
 **Ring account linking**
 

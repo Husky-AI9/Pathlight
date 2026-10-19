@@ -79,11 +79,14 @@ function Session({ device, renew }: { device: Device; renew: () => void }) {
           ref={web}
           source={{
             html: PLAYER_HTML,
-            baseUrl: "https://spatialguard-production.up.railway.app",
+            baseUrl: "https://pathlight.up.railway.app",
           }}
           originWhitelist={["*"]}
           onShouldStartLoadWithRequest={(r) =>
             r.url === "about:blank" ||
+            r.url === "https://pathlight.up.railway.app" ||
+            r.url === "https://pathlight.up.railway.app/" ||
+            // Previous public address, still served during the switch.
             r.url === "https://spatialguard-production.up.railway.app" ||
             r.url === "https://spatialguard-production.up.railway.app/"
           }

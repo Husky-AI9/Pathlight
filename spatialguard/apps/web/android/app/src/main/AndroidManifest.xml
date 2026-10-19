@@ -29,12 +29,14 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="pathlight.up.railway.app" android:pathPrefix="/verify-email" />
                 <data android:scheme="https" android:host="spatialguard-production.up.railway.app" android:pathPrefix="/verify-email" />
             </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="pathlight.up.railway.app" android:pathPrefix="/reset-password" />
                 <data android:scheme="https" android:host="spatialguard-production.up.railway.app" android:pathPrefix="/reset-password" />
             </intent-filter>
             <intent-filter>

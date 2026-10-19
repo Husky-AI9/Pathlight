@@ -2,7 +2,7 @@ param(
     [switch]$Install,
     [switch]$Release,
     [switch]$Bundle,
-    [string]$ApiUrl = 'https://spatialguard-production.up.railway.app'
+    [string]$ApiUrl = 'https://pathlight.up.railway.app'
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path "$PSScriptRoot/../..").Path

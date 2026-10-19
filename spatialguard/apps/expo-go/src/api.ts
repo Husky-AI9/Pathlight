@@ -6,7 +6,7 @@ export type Incident = components["schemas"]["Incident"];
 export type Device = components["schemas"]["RingDevice"];
 export type Session = components["schemas"]["Session"];
 export type Track = components["schemas"]["TestVideoTrack"];
-export const ORIGIN = "https://spatialguard-production.up.railway.app";
+export const ORIGIN = "https://pathlight.up.railway.app";
 let token = "";
 export class ApiError extends Error {
   constructor(

@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     buildFeatures { buildConfig true }
-    def hostedApiUrl = (project.findProperty('SPATIALGUARD_API_URL') ?: System.getenv('SPATIALGUARD_API_URL') ?: 'https://spatialguard-production.up.railway.app')
+    def hostedApiUrl = (project.findProperty('SPATIALGUARD_API_URL') ?: System.getenv('SPATIALGUARD_API_URL') ?: 'https://pathlight.up.railway.app')
         .toString().replace('\\', '\\\\').replace('"', '\\"')
     // Debug installs use the hosted service by default so emulator sign-in
     // behaves like the submitted app. Local API testing remains available by

@@ -206,12 +206,14 @@ export async function openExternal(url: string) {
   else window.open(url, "_blank", "noopener,noreferrer");
 }
 const appLinkRoutes = new Set(["/verify-email", "/reset-password"]);
+// The public address, plus the previous one so links already emailed still open the app.
+const appLinkHosts = new Set(["pathlight.up.railway.app", "spatialguard-production.up.railway.app"]);
 export async function installAppLinkNavigation() {
   if (!native) return () => {};
   const listener = await App.addListener("appUrlOpen", ({ url }) => {
     try {
       const target = new URL(url);
-      const hosted = target.protocol === "https:" && target.hostname === "spatialguard-production.up.railway.app";
+      const hosted = target.protocol === "https:" && appLinkHosts.has(target.hostname);
       const custom = target.protocol === "spatialguard:" && target.hostname === "auth";
       const route = custom ? `/${target.pathname.replace(/^\//, "")}` : target.pathname;
       if ((hosted || custom) && appLinkRoutes.has(route))

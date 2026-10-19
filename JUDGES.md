@@ -1,6 +1,6 @@
 # Judging Pathlight in 5 minutes
 
-**Hosted app:** https://spatialguard-production.up.railway.app
+**Hosted app:** https://pathlight.up.railway.app
 **Sign-in:** use the email and password in the Devpost **testing instructions** field. They are not in this repository.
 **Track:** Ring (with AWS Builder: Amazon Bedrock and Amazon SES)
 
@@ -54,7 +54,7 @@ Want to run it locally? See the [README](README.md#run-it-yourself). Ring integr
   - `SPATIALGUARD_REVIEWER_EMAIL` and `SPATIALGUARD_REVIEWER_PASSWORD` (fresh, private)
   - `PATHLIGHT_DEMO_ACCOUNTS=<reviewer email>`
   - `SPATIALGUARD_DEMO_READ_ONLY=true`
-- [ ] `PL_EMAIL=<reviewer> PL_PASSWORD=<…> python spatialguard/scripts/demo_cafe.py --base https://spatialguard-production.up.railway.app`
+- [ ] `PL_EMAIL=<reviewer> PL_PASSWORD=<…> python spatialguard/scripts/demo_cafe.py --base https://pathlight.up.railway.app`
 - [ ] Sign in as the reviewer. Pair **Front door / Parking lot / Counter** with the Ring cameras. Run **Settings → Demo mode → Create two simulated weeks** and one **Start a lunch rush**.
 - [ ] Walk past each paired camera so **Live** visits exist. Check that the path renders.
 - [ ] **Settings → Ring cameras → Import last 7 days**, then wait for the queued recordings to finish (newest first).

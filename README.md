@@ -8,7 +8,7 @@ Pathlight maps Ring camera activity onto your own floor plan. A café, shop, cli
 
 | | |
 |---|---|
-| **Hosted app** | https://spatialguard-production.up.railway.app |
+| **Hosted app** | https://pathlight.up.railway.app |
 | **Judge guide** | [JUDGES.md](JUDGES.md): a 5-minute path. Credentials are in the Devpost testing-instructions field. |
 | **Friction log** | [FRICTION_LOG.md](FRICTION_LOG.md): 10 dated Ring entries plus feature requests |
 | **Platforms** | Web (desktop and phone) and Android (Capacitor) |
