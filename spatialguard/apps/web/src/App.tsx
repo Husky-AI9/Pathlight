@@ -84,7 +84,7 @@ type EventPage = components["schemas"]["EventPage"];
 type Page = components["schemas"]["IncidentPage"];
 type IncidentClassification = components["schemas"]["IncidentClassification"];
 type ProductCapabilities = components["schemas"]["ProductCapabilities"];
-import { ActivityIcon, actorFromClassification, DEFAULT_ACTOR, type ActorPresentation } from "./activityPresentation";
+import { VisitIcon, actorFromClassification, DEFAULT_ACTOR, type ActorPresentation } from "./activityPresentation";
 const tabs = [
   { name: "Home", icon: House },
   { name: "Activity", icon: History },
@@ -1080,7 +1080,9 @@ export default function App() {
             <div className="incident-row" key={incident.id}>
               <button className="incident-row-main" onClick={() => choose(incident)}>
                 <span className="incident-symbol">
-                  {incident.classification ? <ActivityIcon classification={incident.classification} /> : <MapPin size={20} />}
+                  <VisitIcon classification={incident.classification ?? null}
+                    cameras={new Set(incident.observations.filter((o) => o.category !== "coverage_gap").map((o) => o.source_id)).size}
+                    doorbell={incident.observations.some((o) => o.category === "button_press")} />
                 </span>
                 <span>
                   <strong>{incident.title}</strong>

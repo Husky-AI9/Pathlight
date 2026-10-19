@@ -4198,3 +4198,33 @@ button.quiet-danger { color: #b4232c; border-color: #f0c2c7; background: #fff; }
 @media (prefers-reduced-motion: reduce) {
   .home-camera-row > .camera-remove, .incident-row .incident-delete { transition: none; }
 }
+
+/* Visit icons: one line style on a tint by how much attention it needs ------ */
+.visit-icon {
+  position: relative; flex: none; display: inline-grid; place-items: center;
+  border-radius: 12px; vertical-align: middle;
+}
+.visit-icon.tone-review { color: #4a3fd0; background: #eceafd; }
+.visit-icon.tone-routine { color: #1e7a3c; background: #e3f5ea; }
+.visit-icon.tone-urgent { color: #b4232c; background: #fdecee; }
+.visit-icon.tone-quiet { color: #5c6280; background: #eef0f6; }
+.visit-icon-count {
+  position: absolute; right: -5px; bottom: -5px; min-width: 18px; height: 18px; padding: 0 4px;
+  display: grid; place-items: center; border: 2px solid var(--card, #fff); border-radius: 999px;
+  color: #fff; background: var(--accent); font-size: 10px; font-weight: 700; line-height: 1;
+}
+.incident-symbol .visit-icon { margin-right: 2px; }
+.classification-card > div > .visit-icon { float: left; margin-right: 10px; }
+.incident-classification-heading .visit-icon { margin-right: 8px; }
+
+/* Desktop Home bar between 1101 and 1439 px: the numbers get their own row. */
+@media (min-width: 1101px) and (max-width: 1439px) {
+  .monitor-bar.home-monitor { grid-template-columns: auto minmax(0, 1fr) auto; row-gap: 10px; }
+  .monitor-bar.home-monitor .button-row { grid-column: 3; grid-row: 1; }
+  .home-glance { grid-column: 1 / -1; grid-row: 2; padding-top: 10px; border-left: 0; border-top: 1px solid var(--line); }
+  .home-glance > div:first-child { padding-left: 0; }
+}
+@media (min-width: 1101px) {
+  .map-panel .panel-heading h2 { white-space: nowrap; }
+  .map-tools > button { white-space: nowrap; }
+}

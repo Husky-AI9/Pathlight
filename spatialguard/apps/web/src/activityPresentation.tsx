@@ -1,4 +1,8 @@
-import TopDownPerson, { type ActivityKind } from "@twinforge/spatial-view/TopDownPerson";
+import {
+  BellRing, Car, CircleDashed, CircleHelp, DoorOpen, Footprints, Package, PawPrint,
+  PersonStanding, Route, ScanFace, ShieldAlert, Truck, type LucideIcon,
+} from "lucide-react";
+import { type ActivityKind } from "@twinforge/spatial-view/TopDownPerson";
 import type { Marker } from "@twinforge/spatial-view/Map2D";
 import type { components } from "./generated";
 
@@ -30,9 +34,44 @@ export function actorFromClassification(classification: Classification | null): 
   return { actorKind: activity.kind, actorLabel: activity.label, reviewLevel: activity.review };
 }
 
-export function ActivityIcon({ classification }: { classification: Classification }) {
+// List and card icons: one line-icon style on a tint that says how much
+// attention the visit needs. Map markers keep their top-down figures.
+const ICONS: Record<ActivityKind, LucideIcon> = {
+  person: PersonStanding, delivery: Truck, face_covering: ScanFace, weapon: ShieldAlert, possible_threat: ShieldAlert,
+  intrusion: DoorOpen, package: Package, animal: PawPrint, vehicle: Car, unknown: CircleHelp, none: CircleDashed,
+};
+type Tone = "routine" | "review" | "urgent" | "quiet";
+
+function tone(classification: Classification | null): Tone {
+  if (!classification) return "review";
   const activity = activities[classification.label];
-  return <svg className="classification-icon" viewBox="-4 -4 72 72" role="img" aria-label={activity.label}>
-    <TopDownPerson kind={activity.kind} />
-  </svg>;
+  if (activity.kind === "none" || activity.kind === "unknown") return "quiet";
+  return activity.review;
+}
+
+/**
+ * The icon for one visit. A visit seen by several cameras shows a path with
+ * the camera count, since following someone across cameras is the point.
+ */
+export function VisitIcon({ classification, cameras = 1, doorbell = false, size = 40 }: {
+  classification: Classification | null; cameras?: number; doorbell?: boolean; size?: number;
+}) {
+  const activity = classification ? activities[classification.label] : null;
+  const vague = !activity || activity.kind === "unknown" || activity.kind === "none" || activity.kind === "person";
+  const Icon = cameras > 1 && vague ? Route
+    : activity ? ICONS[activity.kind]
+      : doorbell ? BellRing : Footprints;
+  const label = [activity?.label ?? (doorbell ? "Doorbell pressed" : "Motion reported"),
+    cameras > 1 ? `seen by ${cameras} cameras` : ""].filter(Boolean).join(", ");
+  return (
+    <span className={`visit-icon tone-${cameras > 1 && vague ? "review" : tone(classification)}`}
+      style={{ width: size, height: size }} role="img" aria-label={label} title={label}>
+      <Icon size={Math.round(size * 0.5)} strokeWidth={1.9} aria-hidden="true" />
+      {cameras > 1 && <span className="visit-icon-count" aria-hidden="true">{cameras}</span>}
+    </span>
+  );
+}
+
+export function ActivityIcon({ classification, size = 38 }: { classification: Classification; size?: number }) {
+  return <VisitIcon classification={classification} size={size} />;
 }
