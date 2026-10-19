@@ -34,7 +34,10 @@ function rows(impact: Impact): Row[] {
     ratio: [impact.visits_per_day_before / top, impact.visits_per_day_after / top],
   });
   // The areas that moved most: share of visits for places people choose, time spent for queues.
-  const zones = (impact.zones ?? []).filter((z) => z.share_before < 99 || z.share_after < 99);
+  // Areas nearly every visit passes through (entrance, queue) are compared by
+  // time spent; the others by how many visits chose them.
+  const passing = (z: Impact["zones"][number]) => z.share_before >= 80 && z.share_after >= 80;
+  const zones = (impact.zones ?? []).filter((z) => !passing(z));
   const shares = zones.map((z) => ({ z, change: z.share_after - z.share_before }))
     .filter((x) => Math.abs(x.change) >= 2).sort((a, b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 2);
   for (const { z, change } of shares) {
@@ -45,9 +48,10 @@ function rows(impact: Impact): Row[] {
       ratio: [z.share_before / 100, z.share_after / 100],
     });
   }
-  const waits = (impact.zones ?? []).filter((z) => z.dwell_before_s && z.dwell_after_s && z.share_before >= 99)
-    .map((z) => ({ z, change: pct(z.dwell_after_s!, z.dwell_before_s!) ?? 0 }))
-    .filter((x) => Math.abs(x.change) >= 5).sort((a, b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 1);
+  const waits = (impact.zones ?? []).filter((z) => z.dwell_before_s && z.dwell_after_s && passing(z))
+    .map((z) => ({ z, change: pct(z.dwell_after_s!, z.dwell_before_s!) ?? 0, seconds: z.dwell_after_s! - z.dwell_before_s! }))
+    .filter((x) => Math.abs(x.change) >= 5 && Math.abs(x.seconds) >= 10)
+    .sort((a, b) => Math.abs(b.seconds) - Math.abs(a.seconds)).slice(0, 1);
   for (const { z, change } of waits) {
     const longest = Math.max(z.dwell_before_s!, z.dwell_after_s!);
     result.push({
