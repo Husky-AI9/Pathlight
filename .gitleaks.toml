@@ -1,0 +1,13 @@
+# Secret scanning (gitleaks) for Pathlight: the default rules, minus test fixtures.
+# The tests sign in with fake passwords and a throwaway encryption key on purpose.
+title = "Pathlight"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures use fake credentials"
+paths = [
+  '''^spatialguard/tests/''',
+  '''^spatialguard/apps/web/tests/''',
+]

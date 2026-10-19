@@ -6,13 +6,13 @@ on:
 
 jobs:
   test-and-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with: { fetch-depth: 0 }
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: { python-version: "3.11", cache: pip }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with: { node-version: "22", cache: npm }
       - run: python -m pip install --upgrade pip && pip install -r requirements.lock
       - run: npm ci
@@ -35,10 +35,10 @@ jobs:
           fi
           # The github reporter turns each failing test into an annotation on the run.
           npm run test --workspace spatialguard-web -- --reporter=github,list
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: "21", cache: gradle }
       - run: npm run android:sync --workspace spatialguard-web
-      - run: cd spatialguard/apps/web/android && ./gradlew assembleDebug
+      - run: cd spatialguard/apps/web/android && bash ./gradlew assembleDebug
       - run: npm audit --omit=dev --audit-level=high
       - run: python -m pip install pip-audit bandit pip-licenses
       - run: pip-audit -r requirements.lock

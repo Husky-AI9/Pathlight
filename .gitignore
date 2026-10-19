@@ -11,6 +11,7 @@
 !/.dockerignore
 !/.gitattributes
 !/.gitignore
+!/.gitleaks.toml
 !/.env.example
 !/.nvmrc
 !/.python-version
