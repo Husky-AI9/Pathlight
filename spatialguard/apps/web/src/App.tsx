@@ -1021,7 +1021,7 @@ export default function App() {
       )}
       {site && (
         <div className={`map-caption${!placing && !activeRoom && !activeCamera
-          && view === "2D" && editable && selected?.evidence_mode !== "live" ? " is-hint" : ""}`}>
+          && view === "2D" && editable ? " is-hint" : ""}`}>
           <span className={!placing && !activeRoom && !activeCamera ? "map-caption-hint" : undefined}>
             <MapPin size={14} />
             {placing
@@ -1030,7 +1030,7 @@ export default function App() {
                 activeCamera?.name ??
                 "Select a room or camera")}
           </span>
-          <span className={view === "2D" && editable && selected?.evidence_mode !== "live" ? "map-caption-hint" : undefined}>
+          <span className={view === "2D" && editable ? "map-caption-hint" : undefined}>
             {view === "Camera wall"
               ? "Live Ring views ? saved camera order"
               : selected?.evidence_mode === "live"
