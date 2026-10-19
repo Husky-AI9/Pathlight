@@ -4137,3 +4137,64 @@ button.quiet-danger { color: #b4232c; border-color: #f0c2c7; background: #fff; }
   .home-dashboard .map-tools .view-toggle { flex: 1 1 auto; min-width: 0; }
   .home-dashboard .map-tools .view-toggle button { flex: 1; padding-inline: 6px; }
 }
+
+/* Desktop Home: today at a glance, camera tiles, quieter rows --------------- */
+.home-glance { display: none; }
+@media (min-width: 1101px) {
+  .monitor-bar.home-monitor {
+    grid-template-columns: auto minmax(150px, 210px) minmax(0, 1fr) auto;
+    padding: 12px 16px 12px 18px;
+  }
+  .home-glance {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0; min-width: 0; border-left: 1px solid var(--line);
+  }
+  .home-glance > div { min-width: 0; padding: 1px 18px; border-right: 1px solid var(--line); }
+  .home-glance > div:last-child { border-right: 0; }
+  .home-glance dt { color: var(--muted); font-size: 12px; }
+  .home-glance dd { display: grid; margin: 1px 0 0; }
+  .monitor-bar .home-glance strong {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: "Sora", "Source Sans Pro", system-ui, sans-serif;
+    font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: -0.025em; color: var(--ink);
+  }
+  .home-glance small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+  .home-glance small.is-up { color: #1e7a3c; }
+  .home-glance small.is-down { color: #b4232c; }
+
+  /* Cameras as snapshot tiles, two across. */
+  .home-side-rail { grid-template-rows: minmax(250px, 46%) minmax(0, 1fr); }
+  .home-camera-scroll {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: max-content; align-content: start; gap: 8px; padding: 8px;
+  }
+  .home-camera-row + .home-camera-row { margin-top: 0; }
+  .home-camera-row {
+    position: relative; display: block; min-height: 0; padding: 0;
+    border-radius: 10px; overflow: hidden;
+  }
+  .home-camera-row.selected { box-shadow: 0 0 0 2px var(--accent); }
+  .home-camera-select { display: block; width: 100%; min-height: 0; }
+  .home-camera-select .home-camera-thumb {
+    width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: 0;
+  }
+  .home-camera-select > span { display: block; padding: 7px 9px 8px; }
+  .home-camera-select small { display: none; }
+  .home-camera-row > .pair-camera-button { position: absolute; top: 6px; left: 6px; }
+  .home-camera-row > .camera-remove {
+    position: absolute; top: 6px; right: 6px; width: 30px; min-height: 30px;
+    border-radius: 8px; background: rgba(255, 255, 255, .92);
+  }
+}
+@media (min-width: 1101px) and (hover: hover) {
+  /* Delete stays one hover away, so rows read as activity, not as bins. */
+  .home-camera-row > .camera-remove,
+  .incident-row .incident-delete { opacity: 0; transition: opacity .12s ease; }
+  .home-camera-row:hover > .camera-remove,
+  .home-camera-row:focus-within > .camera-remove,
+  .incident-row:hover .incident-delete,
+  .incident-row:focus-within .incident-delete { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-camera-row > .camera-remove, .incident-row .incident-delete { transition: none; }
+}

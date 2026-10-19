@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import Map2D from "@twinforge/spatial-view/Map2D";
 import MapControls from "./MapControls";
+import HomeGlance from "./HomeGlance";
 import SpatialGuardMark, { PathlightWordmark } from "./SpatialGuardMark";
 import { useLiveMotion } from "./liveMotion";
 import { incidentLinks, incidentMarkers } from "./incidentMap";
@@ -154,6 +155,8 @@ export default function App() {
     [busy, setBusy] = useState(false),
     [run, setRun] = useState<Run | null>(null),
     [view, setView] = useState("2D"),
+    // Desktop gives the floor plan more of the map; phones keep ground around it.
+    [wide, setWide] = useState(() => typeof window !== "undefined" && window.matchMedia("(min-width: 1101px)").matches),
     [mapZoom, setMapZoom] = useState(1),
     [mapViewKey, setMapViewKey] = useState(0),
     [heatmapOn, setHeatmapOn] = useState(false),
@@ -213,6 +216,12 @@ export default function App() {
       window.clearTimeout(timer);
     };
   }, [tab]);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1101px)");
+    const update = () => setWide(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   useEffect(() => {
     window.localStorage.setItem("spatialguard-low-power", String(lowPower));
     if (lowPower && view === "3D") setView("2D");
@@ -876,6 +885,7 @@ export default function App() {
               motionCameras={pulsing}
               simulatedCameras={simulatedCameras}
               fitBuilding={tab === "Home"}
+              fitScale={wide ? 0.94 : 0.7}
               editable={editable}
               placing={placing}
               background={planImage}
@@ -1276,7 +1286,7 @@ export default function App() {
           {(tab === "Home" || tab === "Activity") && (
             <div className={tab === "Activity" && !selected ? "incident-page" : "home-page"}>
               {site && (
-                <div className={`monitor-bar${place.monitoring.enabled ? " on" : ""}`}>
+                <div className={`monitor-bar${place.monitoring.enabled ? " on" : ""}${tab === "Home" ? " home-monitor" : ""}`}>
                   <span className="monitor-dot" aria-hidden="true" />
                   <div className="monitor-text">
                     <strong>
@@ -1290,6 +1300,7 @@ export default function App() {
                           : "No cameras selected. Turn cameras on in Cameras."}
                     </span>
                   </div>
+                  {tab === "Home" && <HomeGlance siteId={site.id} refreshKey={incidents[0]?.id} />}
                   <div className="button-row">
                     {place.monitoring.enabled ? (
                       <>

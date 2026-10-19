@@ -76,6 +76,7 @@ export default function Map2D({
   placing = false,
   background = "",
   fitBuilding = false,
+  fitScale = 0.7,
   onCameraChange,
   onPlace,
   zoom: zoomProp,
@@ -97,6 +98,8 @@ export default function Map2D({
   background?: string;
   /** Fit the house and active camera, without distant unused coverage shrinking the plan. */
   fitBuilding?: boolean;
+  /** With fitBuilding, how much of the fitted view the building fills (0.7 leaves ground around it). */
+  fitScale?: number;
   onCameraChange?: (id: string, change: CameraChange) => void;
   onPlace?: (xy: XY) => void;
   /** Controlled zoom (1 = fitted). Omit to let the map manage its own zoom. */
@@ -122,8 +125,8 @@ export default function Map2D({
     floor_plan: null,
   } : layout;
   const [baseX, baseY, baseWidth, baseHeight] = bounds(viewLayout, fitBuilding ? 0.65 : 2.4, fitBuilding ? 0.45 : 1.2);
-  // Home shows the house at 70% of its fitted size, with more surrounding ground.
-  const viewScale = fitBuilding ? 0.7 : 1;
+  // Home shows the house at 70% of its fitted size by default, with more surrounding ground.
+  const viewScale = fitBuilding ? Math.max(0.4, Math.min(1, fitScale)) : 1;
   const w = baseWidth / viewScale, h = baseHeight / viewScale;
   const x = baseX - (w - baseWidth) / 2, y = baseY - (h - baseHeight) / 2;
   const [innerZoom, setInnerZoom] = useState(1);
