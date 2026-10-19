@@ -20,8 +20,9 @@ export const MIN_VISITS = 10;
 // a long stay there is not a till problem, so it is left out here.
 const WAIT_WORDS = ["checkout", "check-out", "counter", "register", "queue", "line", "till", "order"];
 const isWaitZone = (name: string) => WAIT_WORDS.some((w) => name.toLowerCase().includes(w));
-// Ways in and out of the place: busy by nature, not floor space to rearrange.
-const PASS_WORDS = ["entrance", "entry", "door", "exit", "parking", "car park", "lot", "sidewalk", "street", "driveway"];
+// Ways in and out of the place, plus "Outside" (seen by a camera but in no
+// area): busy by nature, or not floor space to rearrange.
+const PASS_WORDS = ["entrance", "entry", "door", "exit", "parking", "car park", "lot", "sidewalk", "street", "driveway", "outside"];
 const isPassZone = (name: string) => PASS_WORDS.some((w) => name.toLowerCase().includes(w));
 
 const weekdayLong = (date: string) =>
