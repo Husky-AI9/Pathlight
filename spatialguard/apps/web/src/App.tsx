@@ -26,6 +26,7 @@ import {
   LogOut,
   ChevronRight,
   Trash2,
+  Users,
 } from "lucide-react";
 import Map2D from "@twinforge/spatial-view/Map2D";
 import MapControls from "./MapControls";
@@ -949,6 +950,28 @@ export default function App() {
           )}
         </div>
       )}
+      {/* On a phone the heatmap controls sit under the map, inside the card, so
+          they never cover the floor plan. Hidden on wider screens (CSS). */}
+      {site && (view === "2D" || view === "3D") && !selected && (
+        <div className="map-heat-bar">
+          <button type="button" className="map-heat-toggle" aria-pressed={heatmapOn}
+            onClick={() => setHeatmapOn((on) => !on)}>
+            <Users size={17} aria-hidden="true" />
+            <span>People heatmap</span>
+            <i className="map-heat-switch" aria-hidden="true" />
+          </button>
+          {heatmapOn && (
+            <HeatmapPanel
+              range={heatRange}
+              onRange={setHeatRange}
+              data={heat.data}
+              loading={heat.loading}
+              error={heat.error}
+              cameraName={(id) => place.layout.cameras.find((c) => c.id === id)?.name ?? "a camera"}
+            />
+          )}
+        </div>
+      )}
       {activeRoom && view === "2D" && (
         <div className="map-camera-panel">
           <div className="panel-heading">
@@ -997,8 +1020,9 @@ export default function App() {
         </div>
       )}
       {site && (
-        <div className="map-caption">
-          <span>
+        <div className={`map-caption${!placing && !activeRoom && !activeCamera
+          && view === "2D" && editable && selected?.evidence_mode !== "live" ? " is-hint" : ""}`}>
+          <span className={!placing && !activeRoom && !activeCamera ? "map-caption-hint" : undefined}>
             <MapPin size={14} />
             {placing
               ? "Click the plan to place a camera"
@@ -1006,7 +1030,7 @@ export default function App() {
                 activeCamera?.name ??
                 "Select a room or camera")}
           </span>
-          <span>
+          <span className={view === "2D" && editable && selected?.evidence_mode !== "live" ? "map-caption-hint" : undefined}>
             {view === "Camera wall"
               ? "Live Ring views ? saved camera order"
               : selected?.evidence_mode === "live"
