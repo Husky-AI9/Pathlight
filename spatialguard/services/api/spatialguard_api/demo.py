@@ -149,12 +149,29 @@ class _Path:
             self.t += timedelta(seconds=self.rng.uniform(*DWELL_S))
 
 
-def _customer(rng: random.Random, start: datetime, areas: dict, lunch: bool) -> list:
+# The demo's one layout change: a few days ago the café moved its pastry display
+# out of the queue and next to the window bar. Afterwards more people who sit
+# down pick the window bar, and the counter wait is a little shorter. Like every
+# demo-mode visit it is simulated and labelled so.
+LAYOUT_CHANGE_DAYS_BACK = 4
+LAYOUT_CHANGE_NOTE = "Moved the pastry display next to the window bar"
+LAYOUT_KEY = "demo_layout_change:"
+
+
+def layout_change_at(now: datetime, tz) -> datetime:
+    """When the simulated layout change happened: before opening, a few days ago."""
+    day = now.astimezone(tz).date() - timedelta(days=LAYOUT_CHANGE_DAYS_BACK)
+    return datetime(day.year, day.month, day.day, 6, 30, tzinfo=tz).astimezone(timezone.utc)
+
+
+def _customer(rng: random.Random, start: datetime, areas: dict, lunch: bool, after: bool = False) -> list:
     """One café visit: arrive, order, then leave with a coffee or stay at a table."""
     path = _Path(rng, start, areas)
     path.walk("parking", 2)
     path.walk("entrance", 2)
     wait = 1.5 if lunch else 1.0  # the lunch queue is longer
+    if after:
+        wait *= 0.85  # nobody stops in the queue to look at the pastries any more
     kind = rng.random()
     if kind < 0.08:  # looked at the menu and left
         path.stay("counter", rng.uniform(20, 50))
@@ -162,7 +179,7 @@ def _customer(rng: random.Random, start: datetime, areas: dict, lunch: bool) -> 
         path.stay("counter", rng.uniform(90, 240) * wait)
     else:  # sat down
         path.stay("counter", rng.uniform(90, 200) * wait)
-        if rng.random() < 0.78:
+        if rng.random() < (0.55 if after else 0.78):
             path.stay("seating", rng.uniform(6, 16) * 60)
         else:
             path.stay("window", rng.uniform(5, 12) * 60)
@@ -212,6 +229,7 @@ def history(site: dict, now: datetime, tz, seed: int = 1) -> list[dict]:
     rng = random.Random(seed)  # nosec B311 - simulated foot traffic, not security
     today = now.astimezone(tz).date()
     hours, weights = list(HOUR_WEIGHTS), list(HOUR_WEIGHTS.values())
+    changed = layout_change_at(now, tz)
     result = []
     for back in range(HISTORY_DAYS - 1, -1, -1):
         day = today - timedelta(days=back)
@@ -221,7 +239,7 @@ def history(site: dict, now: datetime, tz, seed: int = 1) -> list[dict]:
             hour = rng.choices(hours, weights)[0]
             local = datetime(day.year, day.month, day.day, hour, rng.randrange(60), rng.randrange(60), tzinfo=tz)
             start = local.astimezone(timezone.utc)
-            samples = _customer(rng, start, areas, lunch=hour in (12, 13))
+            samples = _customer(rng, start, areas, lunch=hour in (12, 13), after=start >= changed)
             if not samples or samples[-1][0] > now - SETTLE:
                 continue
             result.append(_incident(site, samples, samples[-1][0]))
@@ -291,6 +309,7 @@ def clear(db, site_id: str) -> int:
     removed = db.execute("DELETE FROM incidents WHERE site_id=? AND run_id LIKE ?",
                          (site_id, RUN_PREFIX + "%")).rowcount
     db.execute("DELETE FROM vehicle_events WHERE site_id=? AND simulated=1", (site_id,))
+    db.execute("DELETE FROM settings WHERE key=?", (LAYOUT_KEY + site_id,))
     db.execute("DELETE FROM site_alerts WHERE site_id=? AND simulated=1", (site_id,))
     db.execute("DELETE FROM site_insights WHERE site_id=?", (site_id,))
     return removed
@@ -483,6 +502,9 @@ def install(app, store, principal, owned, geometry_edit, engine):
             for incident in incidents:
                 _insert(db, incident)
             _insert_vehicles(db, vehicles(site, incidents, body.seed))
+            changed = layout_change_at(datetime.now(timezone.utc), analytics.zone_info(body.tz))
+            db.execute("INSERT OR REPLACE INTO settings VALUES (?,?)",
+                       (LAYOUT_KEY + site_id, dump({"at": _iso(changed), "note": LAYOUT_CHANGE_NOTE})))
             event(db, site_id, "demo.history", site_id)
             audit(db, p["owner"], "demo.history", site_id)
             return status(db, site)

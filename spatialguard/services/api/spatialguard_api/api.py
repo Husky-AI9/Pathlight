@@ -914,6 +914,7 @@ def create_app(db_path=None, engine=None, ring_service=None):
             db.execute("DELETE FROM sites WHERE id=? AND owner=?", (site_id, p["owner"]))
             db.execute("DELETE FROM settings WHERE key=? AND value=?", (active_key(p), site_id))
             db.execute("DELETE FROM settings WHERE key=?", ("demo_bundle:" + site_id,))
+            db.execute("DELETE FROM settings WHERE key=?", ("demo_layout_change:" + site_id,))
             # The sample can be loaded again from scratch.
             db.execute("DELETE FROM settings WHERE key='engine_site' AND value=?", (site_id,))
             audit(db, p["owner"], "site.removed", site_id)
@@ -1233,7 +1234,26 @@ def create_app(db_path=None, engine=None, ring_service=None):
             "SELECT camera_id, at, simulated FROM vehicle_events WHERE site_id=? AND at>=?",
             (site["id"], (datetime.now(timezone.utc) - timedelta(days=15)).isoformat(timespec="seconds")))]
         return analytics.build(site, [json.loads(r["data"]) for r in rows], tracks.load(db, site["id"]), tz,
-                               layout_changes=changes, mode=mode, vehicles=vehicles)
+                               layout_changes=changes, mode=mode, vehicles=vehicles,
+                               layout_change=latest_layout_change(db, site, changes))
+
+    def latest_layout_change(db, site, changes):
+        """The change the impact card describes: the demo's simulated one when there is
+        one, else the owner's latest edit with at least a day of visits after it."""
+        row = db.execute("SELECT value FROM settings WHERE key=?", ("demo_layout_change:" + site["id"],)).fetchone()
+        if row:
+            try:
+                return {**json.loads(row["value"]), "simulated": True}
+            except (TypeError, ValueError):
+                pass
+        cutoff = datetime.now(timezone.utc) - timedelta(days=1)
+        for at in sorted(changes, reverse=True):
+            try:
+                if datetime.fromisoformat(at.replace("Z", "+00:00")) <= cutoff:
+                    return {"at": at, "note": None, "simulated": False}
+            except ValueError:
+                continue
+        return None
 
     def owned_for_analytics(db, site_id, p):
         site = owned(db, site_id, p)

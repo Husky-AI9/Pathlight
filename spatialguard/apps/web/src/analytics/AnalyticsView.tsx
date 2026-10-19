@@ -13,6 +13,7 @@ import type { components } from "../generated";
 import { ACCENT, BusyGrid, ChartCard, DailyCompare, HourlyColumns, PREVIOUS, RankedBars, hourLabel } from "./charts";
 import AlertsCard, { type AlertSettingsInput, type CrowdAlerts } from "./AlertsCard";
 import ActionsCard from "./ActionsCard";
+import LayoutImpactCard from "./LayoutImpactCard";
 import "./analytics.css";
 
 export type SiteAnalytics = components["schemas"]["SiteAnalytics"];
@@ -256,6 +257,8 @@ export default function AnalyticsView(props: AnalyticsViewProps) {
           </div>
 
           <ActionsCard data={data} alerts={props.alerts} />
+
+          <LayoutImpactCard data={data} />
 
           <InsightCard insight={props.insight} busy={props.insightBusy} error={props.insightError}
             onInsight={props.onInsight} visits={totals.visits} />

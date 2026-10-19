@@ -2512,6 +2512,49 @@ export interface components {
             asset_ids?: string[];
             floor_plan?: components["schemas"]["FloorPlanImage"] | null;
         };
+        /**
+         * LayoutImpact
+         * @description The week before a layout change against the days since, per day. Coincidence, not cause.
+         */
+        LayoutImpact: {
+            /** Changed At */
+            changed_at: string;
+            /** Note */
+            note?: string | null;
+            /**
+             * Simulated
+             * @default false
+             */
+            simulated: boolean;
+            /** Days Before */
+            days_before: number;
+            /** Days After */
+            days_after: number;
+            /** Visits Per Day Before */
+            visits_per_day_before: number;
+            /** Visits Per Day After */
+            visits_per_day_after: number;
+            /** Change Pct */
+            change_pct?: number | null;
+            /**
+             * Zones
+             * @default []
+             */
+            zones: components["schemas"]["LayoutImpactZone"][];
+        };
+        /** LayoutImpactZone */
+        LayoutImpactZone: {
+            /** Name */
+            name: string;
+            /** Share Before */
+            share_before: number;
+            /** Share After */
+            share_after: number;
+            /** Dwell Before S */
+            dwell_before_s?: number | null;
+            /** Dwell After S */
+            dwell_after_s?: number | null;
+        };
         /** MediaSession */
         MediaSession: {
             /** Id */
@@ -3128,6 +3171,7 @@ export interface components {
              */
             simulated_visits: number;
             vehicles?: components["schemas"]["AnalyticsVehicles"];
+            layout_impact?: components["schemas"]["LayoutImpact"] | null;
         };
         /** SiteAnalyticsSummary */
         SiteAnalyticsSummary: {

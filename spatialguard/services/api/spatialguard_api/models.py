@@ -452,6 +452,28 @@ class AnalyticsVehicles(Model):
     simulated: int = 0
 
 
+class LayoutImpactZone(Model):
+    name: str
+    share_before: float
+    share_after: float
+    dwell_before_s: float | None = None
+    dwell_after_s: float | None = None
+
+
+class LayoutImpact(Model):
+    """The week before a layout change against the days since, per day. Coincidence, not cause."""
+
+    changed_at: str
+    note: str | None = None
+    simulated: bool = False
+    days_before: int
+    days_after: float
+    visits_per_day_before: float
+    visits_per_day_after: float
+    change_pct: float | None = None
+    zones: list[LayoutImpactZone] = []
+
+
 class SiteAnalytics(Model):
     """Foot traffic for one site: the last 7 local days against the 7 before."""
 
@@ -475,6 +497,7 @@ class SiteAnalytics(Model):
     # This period's simulated or replayed visits, whichever mode is shown.
     simulated_visits: int = 0
     vehicles: AnalyticsVehicles = Field(default_factory=AnalyticsVehicles)
+    layout_impact: LayoutImpact | None = None
 
 
 class SiteAnalyticsSummary(Model):

@@ -26,6 +26,10 @@ Definitions:
 * **Dwell** is the time between consecutive sightings of the same visit in
   the same zone, ignoring gaps longer than 15 seconds.
 
+**Layout impact** compares the 7 days before the owner's latest layout change
+(or the demo's simulated one) with the days since, per day. It shows what
+coincided with the change, not what it caused.
+
 **Vehicles** are Ring Smart Alerts ``vehicle`` motion events. They are
 counted on their own (by hour and camera) and never become visits.
 
@@ -210,9 +214,57 @@ def _vehicles(rows: list[dict], cameras: dict, start: datetime, end: datetime, p
     }
 
 
+IMPACT_DAYS = 7
+
+
+def _impact(everything: list[dict], area_names: list[str], change: dict, now: datetime, tz) -> dict | None:
+    """The week before a layout change against the days since, per day.
+
+    Coincidence, not proof: the card that shows this says so. Needs at least a
+    full day on each side.
+    """
+    try:
+        at = datetime.fromisoformat(str(change["at"]).replace("Z", "+00:00")).astimezone(timezone.utc)
+    except (KeyError, ValueError):
+        return None
+    end = min(at + timedelta(days=IMPACT_DAYS), now)
+    days_after = (end - at).total_seconds() / 86400
+    before = [v for v in everything if at - timedelta(days=IMPACT_DAYS) <= v["start"] < at]
+    after = [v for v in everything if at <= v["start"] <= end]
+    if days_after < 1 or not before or not after:
+        return None
+    a, b = _period_stats(before, area_names, tz), _period_stats(after, area_names, tz)
+    per_before = len(before) / IMPACT_DAYS
+    per_after = len(after) / days_after
+    names = [name for name in dict.fromkeys([*area_names, *a["zone_visits"], *b["zone_visits"]]) if name != OUTSIDE]
+    zones = []
+    for name in names:
+        visits_before, visits_after = a["zone_visits"].get(name, 0), b["zone_visits"].get(name, 0)
+        if not visits_before and not visits_after:
+            continue
+        zones.append({
+            "name": name,
+            "share_before": round(visits_before / len(before) * 100, 1),
+            "share_after": round(visits_after / len(after) * 100, 1),
+            "dwell_before_s": _mean(a["zone_dwell"].get(name, [])),
+            "dwell_after_s": _mean(b["zone_dwell"].get(name, [])),
+        })
+    return {
+        "changed_at": at.isoformat().replace("+00:00", "Z"),
+        "note": change.get("note"),
+        "simulated": bool(change.get("simulated")),
+        "days_before": IMPACT_DAYS,
+        "days_after": round(days_after, 1),
+        "visits_per_day_before": round(per_before, 1),
+        "visits_per_day_after": round(per_after, 1),
+        "change_pct": _change(per_after, per_before),
+        "zones": zones,
+    }
+
+
 def build(site: dict, incidents: list[dict], tracks: dict, tz_name: str | None = None,
           now: datetime | None = None, layout_changes: list[str] | None = None, mode: str = "all",
-          vehicles: list[dict] | None = None) -> dict:
+          vehicles: list[dict] | None = None, layout_change: dict | None = None) -> dict:
     tz = zone_info(tz_name)
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     # Whole local days: this period is the 7 days ending with today.
@@ -318,6 +370,9 @@ def build(site: dict, incidents: list[dict], tracks: dict, tz_name: str | None =
         "simulated_visits": simulated_visits,
         # Vehicles are counted separately and are never visits.
         "vehicles": _vehicles(vehicles or [], camera_names, start, end, previous_start, tz, mode),
+        # A simulated (demo) change is left out of Live only, with the visits it describes.
+        "layout_impact": (_impact(everything, areas, layout_change, now, tz)
+                          if layout_change and not (mode == "live" and layout_change.get("simulated")) else None),
     }
 
 

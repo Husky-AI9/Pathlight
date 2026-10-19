@@ -88,7 +88,10 @@ def _pairs(value, found: list[tuple[float, float]]) -> list[tuple[float, float]]
         for now_key, before_key in (("visits", "previous"), ("visits", "same_day_previous_week"),
                                     ("visits", "visits_previous"), ("total", "previous"),
                                     ("average_dwell_seconds", "average_dwell_seconds_previous"),
-                                    ("average_visit_seconds", "average_visit_seconds_previous")):
+                                    ("average_visit_seconds", "average_visit_seconds_previous"),
+                                    ("visits_per_day_after", "visits_per_day_before"),
+                                    ("share_of_visits_after_pct", "share_of_visits_before_pct"),
+                                    ("average_dwell_seconds_after", "average_dwell_seconds_before")):
             a, b = value.get(now_key), value.get(before_key)
             if isinstance(a, (int, float)) and isinstance(b, (int, float)) and not isinstance(a, bool):
                 found.append((float(a), float(b)))
@@ -202,7 +205,8 @@ def status() -> dict:
 SYSTEM = (
     "You are a retail and workplace foot-traffic analyst writing a short weekly note for a small-business owner. "
     "Use ONLY the numbers in the data you are given. Never invent causes, events, people, or numbers. "
-    "You may connect a change to a layout change only if its date is listed in layout_changes, and then say it "
+    "You may connect a change to a layout change only if its date is listed in layout_changes or layout_change, "
+    "and then say it "
     "coincided rather than caused. Percentages must be computed from the given counts. "
     "Positions are estimates from camera views, so talk about zones and times, not exact spots. "
     "If there is little data, say so plainly and suggest what would help. "
@@ -251,6 +255,14 @@ def _facts(metrics: dict) -> dict:
                          "cameras": [{"camera": c["name"], "count": c["count"], "previous": c["previous"]}
                                      for c in v["cameras"][:4]]}}
            if (v := metrics.get("vehicles") or {}).get("total") or v.get("previous") else {}),
+        **({"layout_change": {
+            "date": li["changed_at"][:10], "what_changed": li.get("note"), "simulated": li["simulated"],
+            "visits_per_day_before": li["visits_per_day_before"], "visits_per_day_after": li["visits_per_day_after"],
+            "zones": [{"zone": z["name"], "share_of_visits_before_pct": z["share_before"],
+                       "share_of_visits_after_pct": z["share_after"],
+                       "average_dwell_seconds_before": z["dwell_before_s"], "average_dwell_seconds_after": z["dwell_after_s"]}
+                      for z in li["zones"][:8]],
+        }} if (li := metrics.get("layout_impact")) else {}),
     }
 
 

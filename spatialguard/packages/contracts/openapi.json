@@ -5806,6 +5806,122 @@
         ],
         "title": "Layout"
       },
+      "LayoutImpact": {
+        "properties": {
+          "changed_at": {
+            "type": "string",
+            "title": "Changed At"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "simulated": {
+            "type": "boolean",
+            "title": "Simulated",
+            "default": false
+          },
+          "days_before": {
+            "type": "integer",
+            "title": "Days Before"
+          },
+          "days_after": {
+            "type": "number",
+            "title": "Days After"
+          },
+          "visits_per_day_before": {
+            "type": "number",
+            "title": "Visits Per Day Before"
+          },
+          "visits_per_day_after": {
+            "type": "number",
+            "title": "Visits Per Day After"
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Pct"
+          },
+          "zones": {
+            "items": {
+              "$ref": "#/components/schemas/LayoutImpactZone"
+            },
+            "type": "array",
+            "title": "Zones",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "changed_at",
+          "days_before",
+          "days_after",
+          "visits_per_day_before",
+          "visits_per_day_after"
+        ],
+        "title": "LayoutImpact",
+        "description": "The week before a layout change against the days since, per day. Coincidence, not cause."
+      },
+      "LayoutImpactZone": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "share_before": {
+            "type": "number",
+            "title": "Share Before"
+          },
+          "share_after": {
+            "type": "number",
+            "title": "Share After"
+          },
+          "dwell_before_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dwell Before S"
+          },
+          "dwell_after_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dwell After S"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "share_before",
+          "share_after"
+        ],
+        "title": "LayoutImpactZone"
+      },
       "MediaSession": {
         "properties": {
           "id": {
@@ -7413,6 +7529,16 @@
           },
           "vehicles": {
             "$ref": "#/components/schemas/AnalyticsVehicles"
+          },
+          "layout_impact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LayoutImpact"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
