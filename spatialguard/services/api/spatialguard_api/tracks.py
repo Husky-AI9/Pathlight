@@ -24,7 +24,8 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
-from .person_tracking import MODEL, PersonDetectorUnavailable, track_video
+from .person_tracking import MODEL, PersonDetectorUnavailable, RecordingUnreadable, track_video
+from .ring_service import ENCRYPTED_VIDEO
 from .store import DATA, account_preferences, now
 
 log = logging.getLogger(__name__)
@@ -109,8 +110,9 @@ def process_one(ring, store) -> bool:
     with store.connect() as db:
         db.execute("BEGIN IMMEDIATE")
         found = db.execute(
+            # Newest event first, so a live walk-by is not stuck behind an Event History import.
             "SELECT * FROM observation_tracks WHERE (state='queued' AND not_before<=?) "
-            "OR (state='running' AND lease<?) ORDER BY not_before LIMIT 1",
+            "OR (state='running' AND lease<?) ORDER BY observed_at DESC LIMIT 1",
             (time.time(), time.time()),
         ).fetchone()
         if not found:
@@ -132,6 +134,10 @@ def process_one(ring, store) -> bool:
     try:
         media, _ = ring.incident_clip(owner["owner"], row["incident_id"], row["observation_id"])
     except HTTPException as error:
+        if error.detail == ENCRYPTED_VIDEO:
+            # Expected for encrypted cameras: the visit stays counted, without a path.
+            _finish(store, row, "encrypted")
+            return True
         # No longer authorized (unlinked, remapped, deleted): never retry.
         _finish(store, row, "failed", retry=error.status_code >= 500)
         return True
@@ -148,6 +154,10 @@ def process_one(ring, store) -> bool:
             path = Path(temporary) / "clip.mp4"
             path.write_bytes(media)
             track = track_video(row["observation_id"], path)
+    except RecordingUnreadable:
+        # Encrypted or corrupt media is not an empty scene: keep the visit, no path.
+        _finish(store, row, "unreadable")
+        return True
     except PersonDetectorUnavailable:
         _finish(store, row, "failed", retry=True)
         return True

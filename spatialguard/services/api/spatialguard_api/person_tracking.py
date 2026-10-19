@@ -21,6 +21,14 @@ class PersonDetectorUnavailable(RuntimeError):
     pass
 
 
+class RecordingUnreadable(PersonDetectorUnavailable):
+    """The file opened but no frame decoded: encrypted or corrupt media, not an empty scene.
+
+    Ring's Computer Vision Guidelines: treat unreadable media as expected and
+    degrade gracefully, so this must never be reported as "no person".
+    """
+
+
 def _letterbox(frame):
     height, width = frame.shape[:2]
     scale = min(SIZE / width, SIZE / height)
@@ -142,4 +150,7 @@ def track_video(video_id: str, path: Path, *, max_seconds: float = 60, timeout_s
         raise PersonDetectorUnavailable("The recording could not be analyzed. Retry movement later.") from None
     finally:
         capture.release()
+    if frame_index == 0:
+        raise RecordingUnreadable("Ring returned a recording that cannot be decoded. If video encryption is on "
+                                  "for this camera, its recordings cannot be analyzed.")
     return TestVideoTrack(video_id=video_id, detector="OpenCV 5 · YOLO11 person · ground point", points=_smooth(raw))

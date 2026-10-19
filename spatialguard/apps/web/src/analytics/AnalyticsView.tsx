@@ -8,7 +8,7 @@
  * foot traffic from camera events, and the data-quality line says how many
  * visits come from detected paths.
  */
-import { Building2, Clock3, DoorOpen, Info, Minus, RefreshCw, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import { Building2, Car, Clock3, DoorOpen, Info, Minus, RefreshCw, ShieldCheck, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import type { components } from "../generated";
 import { ACCENT, BusyGrid, ChartCard, DailyCompare, HourlyColumns, PREVIOUS, RankedBars, hourLabel } from "./charts";
 import AlertsCard, { type AlertSettingsInput, type CrowdAlerts } from "./AlertsCard";
@@ -138,6 +138,14 @@ function InsightCard({ insight, busy, error, onInsight, visits }: {
             </ul>
           )}
           <p className="an-insight-action"><strong>Try this week:</strong> {data.recommendation}</p>
+          {data.checks && (
+            <p className={`an-insight-check${data.checks.fallback ? " is-fallback" : ""}`}>
+              <ShieldCheck size={14} aria-hidden="true" />
+              {data.checks.fallback
+                ? "Plain summary shown: the AI note mentioned something that isn’t in your numbers."
+                : "Checked: every figure matches your numbers, with nothing about who visitors are."}
+            </p>
+          )}
           <footer>
             Written by {data.model.includes("nova") ? "Amazon Nova" : data.model} on {data.provider} from aggregate counts only ·{" "}
             {new Date(data.generated_at).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}
@@ -158,6 +166,30 @@ function InsightCard({ insight, busy, error, onInsight, visits }: {
       )}
       {error && <p className="an-error" role="alert">{error}</p>}
     </section>
+  );
+}
+
+/** Ring Smart Alerts vehicle events, by hour; never counted as visits. */
+export function VehiclesCard({ data, className = "" }: { data: SiteAnalytics; className?: string }) {
+  const v = data.vehicles;
+  const total = v?.total ?? 0, previous = v?.previous ?? 0, simulated = v?.simulated ?? 0;
+  if (!v || (!total && !previous)) return null;
+  const change = previous ? Math.round(((total - previous) / previous) * 100) : null;
+  const peak = v.peak_hour ?? null;
+  const hourly = v.hourly ?? [];
+  const hours = hourly.map((count, hour) => ({ hour, visits: count, previous: 0 }));
+  const where = (v.cameras ?? []).filter((c) => c.count).map((c) => `${c.name} ${c.count}`).join(" · ");
+  return (
+    <ChartCard className={className} title="Vehicles"
+      subtitle={<>{plural(total, "vehicle")} this week{change != null ? ` (${change > 0 ? "+" : ""}${change}% vs last week)` : ""}
+        {peak != null ? <> · busiest at <strong>{hourLabel(peak)}</strong></> : null}</>}
+      table={{ head: ["Hour", "Vehicles"], rows: hourly.map((count, hour) => [hourLabel(hour), count]).filter((row) => row[1]) }}>
+      <HourlyColumns hours={hours} peak={peak} unit="vehicles" compare={false} />
+      <p className="an-footnote"><Car size={14} aria-hidden="true" />
+        From Ring Smart Alerts vehicle events{where ? ` (${where})` : ""}. Counted separately from visits; no plates or images are kept.
+        {simulated ? ` ${plural(simulated, "simulated vehicle")} included.` : ""}
+      </p>
+    </ChartCard>
   );
 }
 
@@ -268,6 +300,8 @@ export default function AnalyticsView(props: AnalyticsViewProps) {
                 items={data.entrances.map((e) => ({ name: e.name, value: e.visits, previous: e.previous }))} />
               <p className="an-footnote"><DoorOpen size={14} aria-hidden="true" />Pair a camera at each door to count every entrance.</p>
             </ChartCard>
+
+            <VehiclesCard data={data} />
           </div>
 
           <p className="an-quality">

@@ -431,6 +431,27 @@ class AnalyticsQuality(Model):
     estimated: int
 
 
+class AnalyticsVehicleCamera(Model):
+    camera_id: str
+    name: str
+    count: int
+    previous: int
+
+
+class AnalyticsVehicles(Model):
+    """Ring Smart Alerts vehicle events (cars in the lot); never counted as visits."""
+
+    total: int = 0
+    previous: int = 0
+    change_pct: float | None = None
+    peak_hour: int | None = None
+    peak_hour_count: int = 0
+    hourly: list[int] = Field(default_factory=lambda: [0] * 24)
+    cameras: list[AnalyticsVehicleCamera] = Field(default_factory=list)
+    # This period's simulated (demo mode) vehicles, whichever mode is shown.
+    simulated: int = 0
+
+
 class SiteAnalytics(Model):
     """Foot traffic for one site: the last 7 local days against the 7 before."""
 
@@ -453,6 +474,7 @@ class SiteAnalytics(Model):
     mode: Literal["all", "live"] = "all"
     # This period's simulated or replayed visits, whichever mode is shown.
     simulated_visits: int = 0
+    vehicles: AnalyticsVehicles = Field(default_factory=AnalyticsVehicles)
 
 
 class SiteAnalyticsSummary(Model):
@@ -471,6 +493,15 @@ class InsightHighlight(Model):
     trend: Literal["up", "down", "flat", "info"]
 
 
+class InsightChecks(Model):
+    """The guardrail result for a generated note."""
+
+    passed: bool = True
+    # True when the model's note failed a check and a plain note is shown instead.
+    fallback: bool = False
+    reasons: list[str] = Field(default_factory=list)
+
+
 class SiteInsight(Model):
     """A weekly AI summary written by Amazon Bedrock from aggregate numbers only."""
 
@@ -483,6 +514,8 @@ class SiteInsight(Model):
     generated_at: str
     period_until: str
     visits: int
+    # Absent on notes written before the checks existed.
+    checks: InsightChecks | None = None
 
 
 class SiteInsightState(Model):

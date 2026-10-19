@@ -5,6 +5,7 @@ import type { components } from "./generated";
 import { RING_HARDWARE } from "./PairCameraSheet";
 type Status = components["schemas"]["RingStatus"];
 type Device = components["schemas"]["RingDevice"];
+type HistoryImport = components["schemas"]["RingHistoryImport"];
 type Site = {
   id: string;
   name: string;
@@ -258,6 +259,7 @@ export default function RingConnection({ sites, refreshOnReturn = false }: { sit
     [busy, setBusy] = useState(false),
     [code, setCode] = useState<components["schemas"]["PairCode"] | null>(null);
   const [view, setView] = useState<Device | null>(null);
+  const [history, setHistory] = useState<HistoryImport | null>(null);
   const load = async (refreshInventory = false) => {
     const s = await request<Status>("/v1/ring");
     setStatus(s);
@@ -447,6 +449,35 @@ export default function RingConnection({ sites, refreshOnReturn = false }: { sit
               );
             })}
           </div>
+          <div className="settings-row ring-history">
+            <span>
+              <strong>Bring in last week from Ring</strong>
+              <small>
+                Pathlight reads each paired camera’s Ring event history and analyzes those recordings like live visits,
+                so your analytics start with real foot traffic. Up to 40 events per camera; vehicle alerts are counted as vehicles.
+              </small>
+            </span>
+            <button disabled={busy || !devices.some((d) => d.camera_id)}
+              onClick={() => void act(async () => setHistory(await request("/v1/ring/history/import", "POST", { days: 7 })))}>
+              Import last 7 days
+            </button>
+          </div>
+          {history && (
+            <div className="ring-history-result" role="status">
+              <p>
+                {history.imported
+                  ? `Queued ${history.imported} past Ring event${history.imported === 1 ? "" : "s"}. Recordings are analyzed in the background, newest first; visits appear in Activity and Analytics as each one finishes.`
+                  : "No new past events to bring in. Events already received from Ring are skipped."}
+              </p>
+              <ul>
+                {history.cameras.map((c) => (
+                  <li key={c.device_id}>
+                    <strong>{c.name}</strong> {c.note ?? `${c.imported} of ${c.found} past event${c.found === 1 ? "" : "s"} added`}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <p className="fine">Live views last up to 25 seconds and aren’t recorded.</p>
         </section>
       )}

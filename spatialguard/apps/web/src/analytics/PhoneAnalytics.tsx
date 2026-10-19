@@ -9,7 +9,8 @@
  * Accuracy: how sure the numbers are, and the weekly AI note.
  */
 import { useState } from "react";
-import { Sparkles, TrendingDown, TrendingUp, Minus, Info, RefreshCw } from "lucide-react";
+import { Car, Sparkles, TrendingDown, TrendingUp, Minus, Info, RefreshCw } from "lucide-react";
+import { hourLabel as hourName } from "./charts";
 import { ModeSwitch, simulatedNote, type AnalyticsViewProps } from "./AnalyticsView";
 import AlertsCard from "./AlertsCard";
 import ActionsCard from "./ActionsCard";
@@ -298,6 +299,15 @@ export default function PhoneAnalytics(props: PhoneAnalyticsProps) {
             <span>{entrances.length ? "Only one entrance camera is recording arrivals, so every visit starts here." : "Arrivals appear once your cameras record visits."} Pair a camera at each door to count every entrance.</span>
           </div>
         )}
+        {(data.vehicles?.total || data.vehicles?.previous) ? (
+          <div className="pa-note pa-vehicles">
+            <Car size={16} aria-hidden="true" />
+            <span>
+              <b>{data.vehicles.total ?? 0} {data.vehicles.total === 1 ? "vehicle" : "vehicles"}</b> this week
+              {data.vehicles.peak_hour != null ? `, busiest at ${hourName(data.vehicles.peak_hour)}` : ""}. From Ring Smart Alerts; never counted as visits.
+            </span>
+          </div>
+        ) : null}
         <button className="pa-primary" onClick={props.onPair}>Pair a camera</button>
       </div>
     );
@@ -345,6 +355,11 @@ export default function PhoneAnalytics(props: PhoneAnalyticsProps) {
                   return <li key={h.title} className={`trend-${h.trend}`}><Icon size={15} aria-hidden="true" /><span><b>{h.title}</b>{h.detail}</span></li>;
                 })}</ul>
                 <p className="pa-insight-action"><b>Try this week:</b> {note.recommendation}</p>
+                {note.checks && (
+                  <p className="pa-fine">{note.checks.fallback
+                    ? "Plain summary shown: the AI note mentioned something not in your numbers."
+                    : "Checked against your numbers."}</p>
+                )}
                 <div className="pa-insight-foot">
                   <small>Amazon Nova on Amazon Bedrock · aggregate counts only</small>
                   <button onClick={props.onInsight} disabled={props.insightBusy}><RefreshCw size={13} aria-hidden="true" />{props.insightBusy ? "Writing…" : "Refresh"}</button>

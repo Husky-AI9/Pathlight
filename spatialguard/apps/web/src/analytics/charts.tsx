@@ -162,7 +162,13 @@ export function DailyCompare({ days }: { days: { label: string; visits: number; 
 }
 
 /** Visits by hour of day; the peak hour is the one saturated bar. */
-export function HourlyColumns({ hours, peak }: { hours: { hour: number; visits: number; previous: number }[]; peak: number | null }) {
+export function HourlyColumns({ hours, peak, unit = "visits", compare = true }: {
+  hours: { hour: number; visits: number; previous: number }[]; peak: number | null;
+  /** What a column counts, for screen readers ("visits", "vehicles"). */
+  unit?: string;
+  /** Show last week's value in the tooltip. */
+  compare?: boolean;
+}) {
   const [tip, setTip] = useState<Tip>(null);
   const [holder, W] = useWidth();
   const H = 210, left = 30, bottom = 26, top = 20;
@@ -174,7 +180,7 @@ export function HourlyColumns({ hours, peak }: { hours: { hour: number; visits: 
   const every = W < 420 ? 6 : 3;
   return (
     <div className="an-plot" ref={holder} onPointerLeave={() => setTip(null)}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Visits by hour of day this week">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${unit[0].toUpperCase()}${unit.slice(1)} by hour of day this week`}>
         {ticks.map((t) => (
           <g key={t}>
             <line x1={left} x2={W} y1={y(t)} y2={y(t)} stroke={GRID} strokeWidth="1" />
@@ -185,9 +191,10 @@ export function HourlyColumns({ hours, peak }: { hours: { hour: number; visits: 
           const cx = left + band * h.hour + band / 2;
           const isPeak = h.hour === peak && h.visits > 0;
           const show = () => setTip({ x: (cx / W) * 100, y: y(h.visits) * 0.6, title: `${hourLabel(h.hour)} – ${hourLabel((h.hour + 1) % 24)}`,
-            rows: [{ label: "This week", value: `${h.visits}`, color: ACCENT }, { label: "Last week", value: `${h.previous}`, color: PREVIOUS }] });
+            rows: [{ label: "This week", value: `${h.visits}`, color: ACCENT },
+              ...(compare ? [{ label: "Last week", value: `${h.previous}`, color: PREVIOUS }] : [])] });
           return (
-            <g key={h.hour} tabIndex={0} role="button" className="an-hit" aria-label={`${hourLabel(h.hour)}: ${h.visits} visits`}
+            <g key={h.hour} tabIndex={0} role="button" className="an-hit" aria-label={`${hourLabel(h.hour)}: ${h.visits} ${unit}`}
               onPointerEnter={show} onFocus={show} onBlur={() => setTip(null)} onClick={show}>
               <rect x={cx - band / 2} y={top} width={band} height={base - top} fill="transparent" />
               <path d={column(cx - bar / 2, y(h.visits), bar, base)} fill={isPeak ? ACCENT : ACCENT_SOFT} />

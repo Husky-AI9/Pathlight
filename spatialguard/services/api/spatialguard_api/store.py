@@ -102,6 +102,9 @@ def cleanup_retention(store):
             )]
             incident_cutoff = current - timedelta(days=preferences["incident_retention_days"])
             for site_id in sites:
+                # Vehicle counts follow the same retention as visits.
+                db.execute("DELETE FROM vehicle_events WHERE site_id=? AND at<?",
+                           (site_id, incident_cutoff.isoformat(timespec="seconds")))
                 rows = db.execute(
                     "SELECT id,run_id,data FROM incidents WHERE site_id=?", (site_id,)
                 ).fetchall()
@@ -204,6 +207,13 @@ class Store:
             );
             CREATE INDEX IF NOT EXISTS observation_tracks_due ON observation_tracks(state, not_before);
             CREATE INDEX IF NOT EXISTS observation_tracks_site ON observation_tracks(site_id);
+            -- Ring Smart Alerts "vehicle" motion: counted for analytics, never a visit.
+            -- No image, plate or recording is kept; simulated=1 rows come from demo mode.
+            CREATE TABLE IF NOT EXISTS vehicle_events (
+                id TEXT PRIMARY KEY, site_id TEXT NOT NULL, camera_id TEXT NOT NULL,
+                at TEXT NOT NULL, simulated INTEGER NOT NULL DEFAULT 0, source TEXT NOT NULL DEFAULT 'ring'
+            );
+            CREATE INDEX IF NOT EXISTS vehicle_events_site ON vehicle_events(site_id, at);
             -- Weekly AI summary of a site's analytics (Amazon Bedrock); aggregate numbers only.
             CREATE TABLE IF NOT EXISTS site_insights (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, site_id TEXT NOT NULL,

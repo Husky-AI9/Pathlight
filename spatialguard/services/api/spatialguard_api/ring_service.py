@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 from fastapi import HTTPException
 from .store import Store, DATA, account_preferences, digest, dump, uid, now, event, audit
 from .mail import send as send_mail
@@ -24,6 +24,14 @@ from .ring_provider import Provider, ServerVault, WindowsVault, credentials
 # device-type field, and Ring's docs say not to infer one from image_url, so the
 # owner says what is mounted at each spot. "other" draws a generic camera.
 OWNER_HARDWARE = ('video_doorbell', 'stick_up_cam', 'other')
+
+# Ring Event History import (the "your last week, from real recordings" path).
+HISTORY_DAYS = 7
+HISTORY_MAX_EVENTS = 40      # per camera, newest first; each one is a clip to analyze
+HISTORY_MAX_PAGES = 5
+HISTORY_DUPLICATE_S = 10     # a webhook for the same event already arrived
+ENCRYPTED_VIDEO = ('Ring video encryption is on for this camera, so Pathlight can count its visits '
+                   'but cannot read its recordings or map where people walked.')
 
 
 def owner_hardware(value):
@@ -60,11 +68,43 @@ def configuration_summary(configuration):
         guidance.append('Motion settings are unavailable. Refresh this camera, then check Motion Settings in the Ring app.')
     elif motion.get('enabled') != 'on':
         guidance.append('Motion detection is off. Turn it on in the Ring app under this camera’s Motion Settings.')
+    # Ring's Developer FAQ (Q13): read e2e_encryption before attempting video
+    # processing. It is a JSON boolean; tolerate the older on/off string too.
+    encryption = values.get('e2e_encryption')
+    encrypted = isinstance(encryption, dict) and encryption.get('enabled') in (True, 'on')
+    if encrypted:
+        guidance.append(ENCRYPTED_VIDEO)
     return {
         'motion_detection': ('on' if isinstance(motion, dict) and motion.get('enabled') == 'on'
                              else 'off' if isinstance(motion, dict) else 'unknown'),
+        'video_encrypted': encrypted,
         'guidance': guidance,
     }
+
+
+def history_kind(event_type):
+    """Map a Ring Event History type ("motion.human", "ding") to a webhook kind and subtype."""
+    value = str(event_type or '').strip().lower()
+    if value in ('ding', 'button_press', 'doorbell', 'doorbell_press') or value.startswith('ding.'):
+        return 'button_press', ''
+    if value == 'motion' or value.startswith(('motion.', 'motion_')) or value == 'motion_detected':
+        subtype = value.split('.', 1)[1] if '.' in value else ''
+        return 'motion_detected', subtype
+    return None, None
+
+
+def history_time(value):
+    """A Ring Event History timestamp (epoch ms, epoch s or ISO 8601) as an aware UTC datetime."""
+    try:
+        if isinstance(value, (int, float)) or (isinstance(value, str) and value.strip().isdigit()):
+            number = float(value)
+            return datetime.fromtimestamp(number / 1000 if number > 1e11 else number, timezone.utc)
+        if isinstance(value, str) and value:
+            parsed = datetime.fromisoformat(value.strip().replace('Z', '+00:00'))
+            return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    except (ValueError, OverflowError, OSError):
+        return None
+    return None
 
 
 def subscription_summary(payload):
@@ -473,7 +513,9 @@ class RingService:
                 ).fetchall()
             if cached and any(
                 'support' not in (value := json.loads(row['data'])) or
-                'configuration' not in value
+                'configuration' not in value or
+                # Rows cached before the video-encryption check was added.
+                'video_encrypted' not in value['configuration']
                 for row in cached
             ):
                 return self.devices(owner, True)
@@ -555,6 +597,109 @@ class RingService:
                 db.execute('UPDATE sites SET data=? WHERE id=?', (dump(data), site))
                 event(db, site, 'monitoring.changed', site)
 
+    def _history_events(self, token, device, since, until):
+        """Motion and doorbell events from Ring Event History, newest first, bounded."""
+        path = '/v1/history/devices/' + quote(device, safe='') + '/events'
+        found, seen = [], set()
+        for _ in range(HISTORY_MAX_PAGES):
+            page = self.provider.api(token, path)
+            items = page.get('data') if isinstance(page, dict) else None
+            if not isinstance(items, list):
+                raise HTTPException(502, 'Unexpected Ring event history response')
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                attrs = item.get('attributes') if isinstance(item.get('attributes'), dict) else {}
+                kind, subtype = history_kind(attrs.get('event_type') or attrs.get('type') or item.get('type'))
+                at = history_time(attrs.get('start') or attrs.get('timestamp') or attrs.get('created_at'))
+                if not kind or not at or not since <= at <= until:
+                    continue
+                key = str(item.get('id') or '') or f'{device}:{at.isoformat()}:{kind}'
+                if key in seen or len(key) > 300 or len(subtype) > 300:
+                    continue
+                seen.add(key)
+                found.append((at, key, kind, subtype))
+            following = (page.get('links') or {}).get('next') if isinstance(page.get('links'), dict) else None
+            if not following or not isinstance(following, str):
+                break
+            target = urlsplit(following)
+            # Follow only Ring API pages; never a link to another host.
+            if target.netloc not in ('', 'api.amazonvision.com') or not target.path.startswith('/v1/'):
+                break
+            path = target.path + ('?' + target.query if target.query else '')
+        found.sort(reverse=True)
+        return found[:HISTORY_MAX_EVENTS]
+
+    def import_history(self, owner, days=HISTORY_DAYS):
+        """Queue the last ``days`` of Ring events from paired, monitored cameras.
+
+        Each event becomes an ordinary inbox row, so the same pipeline as a live
+        webhook downloads its recording, finds the person's path and adds it to
+        analytics as a real (Live) visit. Events a webhook already delivered,
+        or an earlier import queued, are skipped.
+        """
+        a = self.account(owner)
+        token = self.token(a['account'])
+        until = datetime.now(timezone.utc)
+        since = until.timestamp() - days * 86400
+        since = datetime.fromtimestamp(since, timezone.utc)
+        with self.store.connect() as db:
+            mapped = [dict(r) for r in db.execute(
+                'SELECT * FROM ring_devices WHERE account=? AND site IS NOT NULL AND camera IS NOT NULL',
+                (a['account'],))]
+            sites = {r['id']: json.loads(r['data']) for r in db.execute('SELECT id,data FROM sites WHERE owner=?', (owner,))}
+        if not mapped:
+            raise HTTPException(409, 'Pair a Ring camera with a camera on your map first')
+        cameras, total = [], 0
+        for device in mapped:
+            site = sites.get(device['site'])
+            name = json.loads(device['data']).get('name', 'Ring camera')
+            entry = {'device_id': device['device'], 'name': name, 'site_id': device['site'],
+                     'camera_id': device['camera'], 'found': 0, 'imported': 0, 'note': None}
+            cameras.append(entry)
+            if not site or not site['monitoring']['enabled'] or device['camera'] not in site['monitoring']['camera_ids']:
+                entry['note'] = 'Not monitored. Select this camera for monitoring first.'
+                continue
+            try:
+                events = self._history_events(token, device['device'], since, until)
+            except HTTPException as error:
+                if error.status_code == 401:
+                    raise
+                entry['note'] = 'Ring could not return this camera’s event history. Try again shortly.'
+                continue
+            entry['found'] = len(events)
+            snapshot = dump({'site': site['id'], 'revision': site['revision_id'], 'camera': device['camera'],
+                             'monitoring_version': site.get('monitoring_version', 0), 'generation': a['generation']})
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                if not db.execute("SELECT 1 FROM ring_accounts WHERE account=? AND generation=? AND state='connected'",
+                                  (a['account'], a['generation'])).fetchone():
+                    raise HTTPException(401, 'Ring connection changed')
+                delivered = {}
+                for row in db.execute('SELECT kind, at FROM ring_inbox WHERE account=? AND device=? AND at>=?',
+                                      (a['account'], device['device'], since.isoformat())):
+                    try:
+                        delivered.setdefault(row['kind'], []).append(datetime.fromisoformat(row['at']).timestamp())
+                    except ValueError:
+                        continue
+                for at, key, kind, subtype in events:
+                    event_id = digest(a['account'] + ':history:' + key)
+                    if db.execute('SELECT 1 FROM ring_inbox WHERE id=?', (event_id,)).fetchone():
+                        continue
+                    stamp = at.timestamp()
+                    if any(abs(stamp - other) <= HISTORY_DUPLICATE_S for other in delivered.get(kind, [])):
+                        continue
+                    db.execute('INSERT INTO ring_inbox(id,account,device,kind,at,received,subtype,state,snapshot,provider_request) '
+                               'VALUES (?,?,?,?,?,?,?,?,?,?)',
+                               (event_id, a['account'], device['device'], kind, at.isoformat(), now(), subtype,
+                                'queued', snapshot, 'history'))
+                    delivered.setdefault(kind, []).append(stamp)
+                    entry['imported'] += 1
+                total += entry['imported']
+        with self.store.connect() as db:
+            audit(db, owner, 'ring.history_imported', str(total))
+        return {'days': days, 'imported': total, 'cameras': cameras}
+
     def authorize_incident_recording(self, owner, incident_id, observation_id):
         with self.store.connect() as db:
             incident = db.execute('SELECT i.data FROM incidents i JOIN sites s ON s.id=i.site_id '
@@ -591,6 +736,9 @@ class RingService:
             if cached:
                 return cached[1:]
         device = json.loads(row['device_data'])
+        if (device.get('configuration') or {}).get('video_encrypted'):
+            # Expected, not an error (Ring Computer Vision Guidelines): degrade gracefully.
+            raise HTTPException(409, ENCRYPTED_VIDEO)
         components = device.get('capabilities', {}).get('components', {}).get('items', [])
         if len(components) > 1:
             raise HTTPException(409, 'The camera module for this older event is unknown; playback cannot select it safely.')

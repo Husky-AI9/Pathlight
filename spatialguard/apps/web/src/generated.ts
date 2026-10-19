@@ -1369,6 +1369,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/ring/history/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import History
+         * @description Bring in the last week of Ring events from the paired cameras' Event History.
+         *
+         *     Each event goes through the same pipeline as a live webhook (recording,
+         *     person path, analytics) and is labelled Live. Duplicates are skipped.
+         */
+        post: operations["import_history_v1_ring_history_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ring/devices/{device}/mapping": {
         parameters: {
             query?: never;
@@ -1750,6 +1773,51 @@ export interface components {
             first_hour: number | null;
             /** Last Hour */
             last_hour: number | null;
+        };
+        /** AnalyticsVehicleCamera */
+        AnalyticsVehicleCamera: {
+            /** Camera Id */
+            camera_id: string;
+            /** Name */
+            name: string;
+            /** Count */
+            count: number;
+            /** Previous */
+            previous: number;
+        };
+        /**
+         * AnalyticsVehicles
+         * @description Ring Smart Alerts vehicle events (cars in the lot); never counted as visits.
+         */
+        AnalyticsVehicles: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Previous
+             * @default 0
+             */
+            previous: number;
+            /** Change Pct */
+            change_pct?: number | null;
+            /** Peak Hour */
+            peak_hour?: number | null;
+            /**
+             * Peak Hour Count
+             * @default 0
+             */
+            peak_hour_count: number;
+            /** Hourly */
+            hourly?: number[];
+            /** Cameras */
+            cameras?: components["schemas"]["AnalyticsVehicleCamera"][];
+            /**
+             * Simulated
+             * @default 0
+             */
+            simulated: number;
         };
         /** AnalyticsZone */
         AnalyticsZone: {
@@ -2367,6 +2435,24 @@ export interface components {
             /** Next Cursor */
             next_cursor?: number | null;
         };
+        /**
+         * InsightChecks
+         * @description The guardrail result for a generated note.
+         */
+        InsightChecks: {
+            /**
+             * Passed
+             * @default true
+             */
+            passed: boolean;
+            /**
+             * Fallback
+             * @default false
+             */
+            fallback: boolean;
+            /** Reasons */
+            reasons?: string[];
+        };
         /** InsightHighlight */
         InsightHighlight: {
             /** Title */
@@ -2805,6 +2891,43 @@ export interface components {
             /** Guidance */
             guidance?: string[];
         };
+        /** RingHistoryCamera */
+        RingHistoryCamera: {
+            /** Device Id */
+            device_id: string;
+            /** Name */
+            name: string;
+            /** Site Id */
+            site_id: string;
+            /** Camera Id */
+            camera_id: string;
+            /** Found */
+            found: number;
+            /** Imported */
+            imported: number;
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * RingHistoryImport
+         * @description Past Ring events queued for the same analysis as live webhooks.
+         */
+        RingHistoryImport: {
+            /** Days */
+            days: number;
+            /** Imported */
+            imported: number;
+            /** Cameras */
+            cameras: components["schemas"]["RingHistoryCamera"][];
+        };
+        /** RingHistoryRequest */
+        RingHistoryRequest: {
+            /**
+             * Days
+             * @default 7
+             */
+            days: number;
+        };
         /** RingMapping */
         RingMapping: {
             /** Site Id */
@@ -3004,6 +3127,7 @@ export interface components {
              * @default 0
              */
             simulated_visits: number;
+            vehicles?: components["schemas"]["AnalyticsVehicles"];
         };
         /** SiteAnalyticsSummary */
         SiteAnalyticsSummary: {
@@ -3045,6 +3169,7 @@ export interface components {
             period_until: string;
             /** Visits */
             visits: number;
+            checks?: components["schemas"]["InsightChecks"] | null;
         };
         /** SiteInsightState */
         SiteInsightState: {
@@ -5603,6 +5728,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_history_v1_ring_history_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RingHistoryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RingHistoryImport"];
+                };
             };
             /** @description Validation Error */
             422: {

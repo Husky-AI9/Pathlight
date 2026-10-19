@@ -2931,6 +2931,45 @@
         }
       }
     },
+    "/v1/ring/history/import": {
+      "post": {
+        "summary": "Import History",
+        "description": "Bring in the last week of Ring events from the paired cameras' Event History.\n\nEach event goes through the same pipeline as a live webhook (recording,\nperson path, analytics) and is labelled Live. Duplicates are skipped.",
+        "operationId": "import_history_v1_ring_history_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RingHistoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RingHistoryImport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/ring/devices/{device}/mapping": {
       "put": {
         "summary": "Mapping",
@@ -3849,6 +3888,99 @@
           "last_hour"
         ],
         "title": "AnalyticsTotals"
+      },
+      "AnalyticsVehicleCamera": {
+        "properties": {
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "previous": {
+            "type": "integer",
+            "title": "Previous"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "camera_id",
+          "name",
+          "count",
+          "previous"
+        ],
+        "title": "AnalyticsVehicleCamera"
+      },
+      "AnalyticsVehicles": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "previous": {
+            "type": "integer",
+            "title": "Previous",
+            "default": 0
+          },
+          "change_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Pct"
+          },
+          "peak_hour": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Hour"
+          },
+          "peak_hour_count": {
+            "type": "integer",
+            "title": "Peak Hour Count",
+            "default": 0
+          },
+          "hourly": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Hourly"
+          },
+          "cameras": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsVehicleCamera"
+            },
+            "type": "array",
+            "title": "Cameras"
+          },
+          "simulated": {
+            "type": "integer",
+            "title": "Simulated",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AnalyticsVehicles",
+        "description": "Ring Smart Alerts vehicle events (cars in the lot); never counted as visits."
       },
       "AnalyticsZone": {
         "properties": {
@@ -5493,6 +5625,31 @@
         ],
         "title": "IncidentPage"
       },
+      "InsightChecks": {
+        "properties": {
+          "passed": {
+            "type": "boolean",
+            "title": "Passed",
+            "default": true
+          },
+          "fallback": {
+            "type": "boolean",
+            "title": "Fallback",
+            "default": false
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "InsightChecks",
+        "description": "The guardrail result for a generated note."
+      },
       "InsightHighlight": {
         "properties": {
           "title": {
@@ -6628,6 +6785,98 @@
         ],
         "title": "RingDevice"
       },
+      "RingHistoryCamera": {
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "title": "Device Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "site_id": {
+            "type": "string",
+            "title": "Site Id"
+          },
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "found": {
+            "type": "integer",
+            "title": "Found"
+          },
+          "imported": {
+            "type": "integer",
+            "title": "Imported"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "device_id",
+          "name",
+          "site_id",
+          "camera_id",
+          "found",
+          "imported"
+        ],
+        "title": "RingHistoryCamera"
+      },
+      "RingHistoryImport": {
+        "properties": {
+          "days": {
+            "type": "integer",
+            "title": "Days"
+          },
+          "imported": {
+            "type": "integer",
+            "title": "Imported"
+          },
+          "cameras": {
+            "items": {
+              "$ref": "#/components/schemas/RingHistoryCamera"
+            },
+            "type": "array",
+            "title": "Cameras"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "days",
+          "imported",
+          "cameras"
+        ],
+        "title": "RingHistoryImport",
+        "description": "Past Ring events queued for the same analysis as live webhooks."
+      },
+      "RingHistoryRequest": {
+        "properties": {
+          "days": {
+            "type": "integer",
+            "maximum": 7.0,
+            "minimum": 1.0,
+            "title": "Days",
+            "default": 7
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RingHistoryRequest"
+      },
       "RingMapping": {
         "properties": {
           "site_id": {
@@ -7161,6 +7410,9 @@
             "type": "integer",
             "title": "Simulated Visits",
             "default": 0
+          },
+          "vehicles": {
+            "$ref": "#/components/schemas/AnalyticsVehicles"
           }
         },
         "additionalProperties": false,
@@ -7288,6 +7540,16 @@
           "visits": {
             "type": "integer",
             "title": "Visits"
+          },
+          "checks": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InsightChecks"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,

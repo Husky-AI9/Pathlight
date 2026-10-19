@@ -24,7 +24,9 @@ Pathlight maps Ring camera activity onto your own floor plan. A café, shop, cli
 - **Cameras on the map.** Place each Ring camera where it hangs and aim it. Pairing links the map camera to an authorized Ring device, and the owner picks its type (video doorbell, Stick Up Cam or another Ring camera), because Ring's API doesn't report one.
 - **People heatmap.** Every visit becomes floor positions, and the heatmap shows where people actually walk and stop over a chosen time span.
 - **Site analytics.** Visits per day against last week, visits by hour, a busy-times grid, zones with average time spent, and entrances. Real Ring visits and simulated demo visits can be counted separately (**Live only / All data**).
-- **Weekly insight.** Amazon Bedrock writes a short summary from the aggregate numbers only. No images or personal data are sent.
+- **Real history on day one.** **Import last 7 days** reads each paired camera's Ring Event History and analyzes those recordings like live visits, so analytics start with real foot traffic.
+- **Vehicles.** Ring Smart Alerts `vehicle` events are counted as cars by hour (the parking lot), separately from visits. No plates or images are kept.
+- **Weekly insight.** Amazon Bedrock writes a short summary from the aggregate numbers only. No images or personal data are sent. Every note is checked before it is shown: each figure must match the data, a block list catches anything about who visitors are, and a failed note is replaced by a plain one.
 - **Queue and crowding alerts.** Zones named like "Counter" or "Checkout" raise an alert when they pass their limit.
 - **Property management.** Several places per account, with one analytics view per site and data export and deletion.
 - **Visit replay.** Open a real Ring visit to play the Ring recording beside the map while the detected path grows on the floor plan.
@@ -64,6 +66,9 @@ All Ring calls go to the official Ring Partner API from the server. Tokens never
 | Snapshots | `POST /v1/devices/{id}/media/image/download` → pre-signed redirect | `ring_provider.py` (`snapshot`) |
 | Recorded clips for visit paths | `POST /v1/devices/{id}/media/video/download` → OpenCV 5 + YOLO11n person detection → floor points | `ring_provider.py` (`clip`), `tracks.py`, `person_tracking.py` |
 | Live view | WebRTC WHEP `…/media/streaming/whep/sessions`, bounded, video only | `ring_provider.py` (`stream`) |
+| Event History backfill | `GET /v1/history/devices/{id}/events` → the same inbox and clip pipeline as webhooks | `ring_service.py` (`import_history`) |
+| Smart Alerts subtypes | `sub_type` on motion webhooks: `vehicle` is counted as a vehicle, everything else is analyzed | `ring_worker.py`, `analytics.py` |
+| Video encryption check | `e2e_encryption.enabled` in device configurations, read before any video processing | `ring_service.py` |
 | Subscriptions | `GET /v1/accounts/me/subscriptions` | `ring_service.py` |
 
 What we verified with real hardware:
@@ -74,7 +79,7 @@ What we verified with real hardware:
 - signed lifecycle webhooks,
 - a motion event whose recording was analyzed into a 77-point path.
 
-See `spatialguard/docs/verification.md`, `hosted-ring-link-verification.md` and `recorded-incident-movement.md`.
+See `spatialguard/docs/verification.md`, `hosted-ring-link-verification.md` and `recorded-incident-movement.md`. How Pathlight meets Ring's Computer Vision Guidelines is in [ring-cv-guidelines.md](spatialguard/docs/ring-cv-guidelines.md).
 
 ## How AWS is used
 
@@ -181,7 +186,9 @@ The GitHub Actions workflow (`.github/workflows/spatialguard-ci.yml`) runs the b
 
 - Positions are calibration-free estimates (see [position estimation](spatialguard/docs/position-estimation.md)). A wrong heading or range shifts a camera's positions consistently, so treat paths and heatmaps as directional.
 - The detector follows one primary person per recording; it is not a multi-person identity tracker.
-- One physical Ring camera has been verified so far. Additional map cameras in the demo café are labelled **SIM** until paired.
+- Several physical Ring cameras are paired in the demo café. Any map camera without a Ring device is labelled **SIM**.
+- Event History import is capped at the last 7 days and 40 events per camera. Ring decides which past recordings are still available, and a visit without a recording is counted with an estimated position.
+- Cameras with Ring video encryption are counted but never analyzed, so they add no paths.
 - The hosted preview uses SQLite on a mounted volume, with one replica.
 - Ring Appstore certification has not been submitted yet. The draft reviewer notes are in `spatialguard/docs/ring-appstore-review.md`.
 

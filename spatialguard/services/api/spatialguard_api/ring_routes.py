@@ -87,6 +87,27 @@ class TimelapseInput(Model):
     timezone: str = Field(default='America/Phoenix', min_length=1, max_length=80)
 
 
+class RingHistoryCamera(Model):
+    device_id: str
+    name: str
+    site_id: str
+    camera_id: str
+    found: int
+    imported: int
+    note: str | None = None
+
+
+class RingHistoryImport(Model):
+    """Past Ring events queued for the same analysis as live webhooks."""
+    days: int
+    imported: int
+    cameras: list[RingHistoryCamera]
+
+
+class RingHistoryRequest(Model):
+    days: int = Field(default=7, ge=1, le=7)
+
+
 def install(app, store, principal, service=None):
     tracker = IncidentTracker()
     ring = service or RingService(store)
@@ -198,6 +219,17 @@ def install(app, store, principal, service=None):
         require_ring_consent(p['owner'])
         require_feature('timelapse')
         ring.delete_timelapse(p['owner'], project_id)
+
+    @app.post('/v1/ring/history/import', response_model=RingHistoryImport)
+    def import_history(body: RingHistoryRequest, p=Depends(principal)):
+        """Bring in the last week of Ring events from the paired cameras' Event History.
+
+        Each event goes through the same pipeline as a live webhook (recording,
+        person path, analytics) and is labelled Live. Duplicates are skipped.
+        """
+        require_ring_consent(p['owner'])
+        ring.throttle('history:' + p['owner'], limit=3)
+        return ring.import_history(p['owner'], body.days)
 
     @app.put('/v1/ring/devices/{device}/mapping', status_code=204)
     def mapping(device: str, body: RingMapping, p=Depends(principal)):

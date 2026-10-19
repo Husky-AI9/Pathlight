@@ -2,7 +2,7 @@
 import json
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from .models import Association, Incident
 from twinforge.models import Observation
 from .store import account_preferences, digest, event, now
@@ -83,6 +83,24 @@ def recover_bundled_events(store):
 
 def _at(value):
     return datetime.fromisoformat(value).timestamp()
+
+
+# Ring Smart Alerts subtypes that are confidently not a person on foot. Ring's
+# Computer Vision Guidelines: treat subtypes as open-ended, default to unknown,
+# and only skip what is clearly irrelevant. Everything else is analyzed.
+NOT_A_PERSON = {'vehicle'}
+
+
+def is_vehicle(row):
+    return row['kind'] == 'motion_detected' and (row['subtype'] or '').strip().lower() in NOT_A_PERSON
+
+
+def _utc_seconds(value):
+    """One sortable UTC format for vehicle_events.at, whatever the source wrote."""
+    moment = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(timezone.utc).isoformat(timespec='seconds')
 
 
 def _candidate_incident(db, site_id, revision_id, observation, provider_account):
@@ -194,6 +212,18 @@ def process_one(service, engine, classifier=classify_images):
             with store.connect() as db:
                 db.execute("UPDATE ring_inbox SET state='ignored',processed=?,error=NULL WHERE id=?", (now(), row['id']))
             return True
+        if is_vehicle(row):
+            # Ring Smart Alerts says a vehicle, not a person: count it for the
+            # parking numbers and skip the person analysis entirely.
+            with store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                if current(db):
+                    db.execute('INSERT OR IGNORE INTO vehicle_events(id,site_id,camera_id,at,simulated,source) '
+                               "VALUES (?,?,?,?,0,'ring')",
+                               (row['id'], snapshot['site'], snapshot['camera'], _utc_seconds(row['at'])))
+                    event(db, snapshot['site'], 'vehicle.counted', snapshot['camera'])
+                db.execute("UPDATE ring_inbox SET state='succeeded',processed=?,error=NULL WHERE id=?", (now(), row['id']))
+            return True
         classification = None
         classification_status = 'not_requested'
         with store.connect() as db:
@@ -234,7 +264,9 @@ def process_one(service, engine, classifier=classify_images):
             source_id=snapshot['camera'], observed_at=row['at'], received_at=row['received'], category=row['kind'],
             location={'kind':'unknown','reason':'Ring event metadata supplies no calibrated person location. Camera placement does not locate the activity.'},
             evidence={'mode':'live'}, provenance={'kind':'measured','confirmed':False,
-                'explanation':'Signed official Ring webhook: '+row['kind']+'. Provider subtype: '+(row['subtype'] or 'unspecified')+'. No video analysis or identity inference.'})
+                'explanation':(('Ring Event History (imported past event): ' if row.get('provider_request') == 'history'
+                                else 'Signed official Ring webhook: ')+row['kind']+'. Provider subtype: '
+                               +(row['subtype'] or 'unspecified')+'. No video analysis or identity inference.')})
         with store.connect() as db:
             bundled = _bundled_event(db, snapshot, site)
         if not bundled:

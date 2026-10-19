@@ -3899,6 +3899,14 @@ select.site-name {
 .ring-plan { padding: 12px 14px; border-radius: 12px; background: var(--surface); }
 .ring-plan span { display: grid; gap: 2px; }
 .ring-plan small { color: var(--muted); font-size: 13px; }
+.ring-history { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--surface); gap: 12px; }
+.ring-history span { display: grid; gap: 2px; }
+.ring-history small { color: var(--muted); font-size: 13px; line-height: 1.45; }
+.ring-history button { flex-shrink: 0; }
+.ring-history-result { margin-top: 8px; font-size: 13px; }
+.ring-history-result p { margin: 0 0 4px; }
+.ring-history-result ul { margin: 0; padding-left: 18px; color: var(--muted); }
+@media (max-width: 520px) { .ring-history { flex-direction: column; align-items: stretch; } }
 .ring-count { color: var(--muted); font-size: 13px; }
 button.quiet-danger { color: #b4232c; border-color: #f0c2c7; background: #fff; }
 .ring-device-list { display: grid; gap: 10px; }

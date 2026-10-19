@@ -20,8 +20,8 @@ The judge account is isolated: it has no access to the owner's Ring account, hom
 | 2 | Tap the **people** button on the map (**Show people heatmap**). Change the time span. | The people heatmap: where customers actually walk and wait. Counter and entrance glow brightest; corners stay cool. |
 | 3 | Switch to **3D** and drag to orbit. | The same twin as an architectural model, with Ring hardware models mounted on the walls. |
 | 4 | Open **Analytics** (Site Analytics). | Visits, peak hour and busiest zone at the top. Below: visits per day against last week, visits by hour, a busy-times grid (darker is busier), zones with average time spent, and entrances. |
-| 5 | Toggle **Live only / All data**. | Live only counts just the real Ring visits; All data adds the simulated weeks. |
-| 6 | Read **Weekly insight**. | A short plain-English summary written by **Amazon Bedrock (Nova Pro)** from aggregate numbers only (no images, no people). |
+| 5 | Toggle **Live only / All data**. Scroll to **Vehicles**. | Live only counts just the real Ring visits, including the week imported from Ring Event History; All data adds the simulated weeks. Vehicles counts Ring Smart Alerts `vehicle` events by hour, separately from visits. |
+| 6 | Read **Weekly insight**. | A short plain-English summary written by **Amazon Bedrock (Nova Pro)** from aggregate numbers only (no images, no people). The line under it says the note was checked: every figure matches the data, following Ring's Computer Vision Guidelines. |
 | 7 | Look at **Queue & crowding alerts → Recent alerts**. | A counter queue alert raised when the counter zone passed its limit. The owner can change each zone's limit or turn it off. |
 | 8 | Property management: switch places with the **Sites** tabs in Analytics, and open **Settings → Places & floor plans**. | One account runs several places, each with its own twin, cameras and analytics. A new place starts from an uploaded floor plan (optional Bedrock vision ignores furniture). |
 | 9 | Open **Activity** and pick a **Live** visit from the **Front door** Ring camera. | The Ring recording plays beside the map while the detected path grows on the floor plan. The person is shown as an anonymous floor point; the recording is not stored. |
@@ -57,6 +57,7 @@ Want to run it locally? See the [README](README.md#run-it-yourself). Ring integr
 - [ ] `PL_EMAIL=<reviewer> PL_PASSWORD=<…> python spatialguard/scripts/demo_cafe.py --base https://spatialguard-production.up.railway.app`
 - [ ] Sign in as the reviewer. Pair **Front door / Parking lot / Counter** with the Ring cameras. Run **Settings → Demo mode → Create two simulated weeks** and one **Start a lunch rush**.
 - [ ] Walk past each paired camera so **Live** visits exist. Check that the path renders.
+- [ ] **Settings → Ring cameras → Import last 7 days**, then wait for the queued recordings to finish (newest first).
 - [ ] Open **Analytics → Write this week's insight** once, and confirm the text appears.
 - [ ] From a signed-out browser, follow this page end to end.
 - [ ] Put the reviewer credentials in the Devpost testing-instructions field only.

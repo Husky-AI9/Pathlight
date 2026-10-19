@@ -1,7 +1,7 @@
 # Pathlight — Ring developer friction log
 
 **Build, Ship, Shape: Amazon Developer Hackathon · Primary track: Ring**
-**Last updated:** October 7, 2026 · **First recorded:** September 19, 2026
+**Last updated:** October 19, 2026 · **First recorded:** September 19, 2026
 
 This log records friction we hit while building Pathlight (repository: SpatialGuard) against the Ring Partner API with a real Ring account and a physical **Video Doorbell (2nd Gen)**. Each entry lists the task, steps, expected and actual results, severity, our workaround, and a suggestion. It contains no credentials, account IDs, device IDs, private media, or addresses.
 
@@ -31,6 +31,9 @@ This log records friction we hit while building Pathlight (repository: SpatialGu
 | 8 | Device inventory | No device type field; the docs say not to infer it from `image_url` | Minor | Workaround limited to cosmetics |
 | 9 | Media security | The host set for pre-signed snapshot and clip redirects isn't documented | Minor | Worked around (allowlist) |
 | 10 | Account linking | Keeping the nonce out of referrers broke our hosted link form | Minor | Resolved (Sept 21) |
+| 11 | Video encryption | "Video requests return encrypted content" for TAKE devices, but the response shape isn't documented | Important | Worked around (Oct 19) |
+| 12 | Event History | The API reference lists the endpoint but not its response fields, time range, pagination or retention | Important | Worked around (Oct 19) |
+| 13 | Motion subtypes | `sub_type` depends on the owner's Smart Alerts setting, so the same camera sends `motion` or `human` | Minor | Worked around (Oct 19) |
 
 ---
 
@@ -190,6 +193,51 @@ This log records friction we hit while building Pathlight (repository: SpatialGu
 - **Evidence:** `spatialguard/docs/hosted-ring-link-verification.md`; tests `test_hosted_link_form_claims_only_valid_signed_ring_account` and `test_gateway_accepts_public_origin_behind_host_rewriting`.
 - **Suggestion:** In the Account Linking guide, recommend a referrer policy for the Account Link page and mention the `Origin: null` interaction.
 
+## 11. Encrypted (TAKE) video has no documented response shape
+
+- **Date / status:** Oct 19, 2026 · worked around
+- **Task attempted:** Analyze recordings from every paired camera, and degrade gracefully on encrypted ones, as the Computer Vision Guidelines (Oct 19) ask.
+- **Steps taken:** Read the Sept 16 release note, Developer FAQ Q10–Q13 and the new guidelines.
+- **Expected:** The status code, content type or header that marks an encrypted clip, so a client can tell "encrypted" from "corrupt" or "empty".
+- **Actual:** The docs say only that TAKE video requests "continue to succeed but return encrypted content". An encrypted MP4 can open in OpenCV and decode zero frames. A detector would then report "no person", and the visit would silently disappear from analytics.
+- **Severity:** Important. A wrong "no person" undercounts traffic without any visible error.
+- **Workaround:**
+  - Read `configurations.e2e_encryption.enabled` (FAQ Q13) before fetching any recording, and skip encrypted cameras.
+  - Separately, treat a recording with no decodable frame as **unreadable**, never as an empty scene, so the visit stays counted.
+  - Tell the owner in Settings, in plain words, why that camera has no paths.
+- **Evidence:** `ring_service.py` (`configuration_summary`, `incident_clip`), `person_tracking.py` (`RecordingUnreadable`), `tracks.py`; tests `test_encrypted_camera_keeps_the_visit_and_never_reads_video` and `test_undecodable_recording_is_not_reported_as_an_empty_scene`.
+- **Suggestion:** Return a distinct status (for example `409` with an `encrypted_media` error code) or an `X-Ring-Media-Encrypted` header for TAKE content.
+
+## 12. Event History has an endpoint but no documented schema
+
+- **Date / status:** Oct 19, 2026 · worked around
+- **Task attempted:** On pairing, bring in the last week of real Ring events, so a new owner's analytics start with real foot traffic instead of an empty week.
+- **Steps taken:** Read the API reference (`GET /v1/history/devices/{device_id}/events` appears only in the endpoint table) and Ring's `ring-api-helloworld` sample (`scripts/event_history.py`).
+- **Expected:** The response fields, a time-range filter, pagination and retention, as the Media Clips and Snapshots sections document theirs.
+- **Actual:** Only the sample shows the shape (`data[].attributes.event_type` such as `motion.human` or `ding`, and `attributes.start`), plus an `event_types` filter. Nothing documents time ranges, page links, retention, or whether history and clips are limited to events after app consent.
+- **Severity:** Important. A backfill is the fastest path to value for a new customer.
+- **Workaround:**
+  - Parse defensively: epoch seconds, epoch ms or ISO 8601 times; `event_type` or `type`.
+  - Filter the time range on our side.
+  - Follow a `links.next` page only when it points back to `api.amazonvision.com`, with a page cap.
+  - Cap each camera at 40 events.
+  - Skip events a webhook already delivered (same device and kind within 10 seconds).
+  - Imported events go through the normal pipeline and are labelled "Ring Event History" in their provenance.
+- **Evidence:** `ring_service.py` (`import_history`, `history_kind`, `history_time`); tests `test_event_history_import_queues_real_past_visits_once` and `test_event_history_follows_ring_pages`.
+- **Suggestion:** Document the Event History response, `since`/`until` parameters, pagination and retention, and whether the event IDs match webhook `data.id`, so clients can deduplicate exactly.
+
+## 13. Motion subtype depends on the owner's Smart Alerts setting
+
+- **Date / status:** Oct 19, 2026 · worked around
+- **Task attempted:** Analyze clips only when a person is likely, and count cars at the parking camera from Ring's `vehicle` alerts.
+- **Steps taken:** Read the Oct 5 Motion Detection update and the Computer Vision Guidelines on subtypes.
+- **Expected:** A subtype a partner can rely on.
+- **Actual:** With Smart Alerts off, every motion is `motion`. With them on, it's `human`, `vehicle`, `package_delivery` or `other_motion`. The owner's setting, not the scene, decides what a partner receives.
+- **Severity:** Minor.
+- **Workaround:** Skip person analysis only for `vehicle`, and count those as vehicles, never as visits. Analyze everything else, including `motion` and `other_motion`. Show the vehicles card only when vehicle alerts exist, and say it comes from Ring Smart Alerts.
+- **Evidence:** `ring_worker.py` (`NOT_A_PERSON`, `is_vehicle`), `analytics.py` (`_vehicles`); test `test_ring_vehicle_alert_is_counted_and_never_a_visit`.
+- **Suggestion:** Report the owner's Smart Alerts state in the device configuration, so apps can explain missing vehicle counts.
+
 ---
 
 ## Feature requests
@@ -203,6 +251,8 @@ This log records friction we hit while building Pathlight (repository: SpatialGu
 | Reusable dev/staging callback profiles | One-time configuration for local development (entry 4) | Important |
 | Documented WHEP `Location` grammar and pre-signed media hosts | Secure clients without trial and error (entries 2 and 9) | Important |
 | Consent-boundary clamping, or the earliest permitted timestamp, for media ranges | Snapshots work immediately after linking (entry 3) | Nice-to-have |
+| A distinct status or header for encrypted (TAKE) media | Encrypted clips can't be mistaken for empty scenes (entry 11) | Important |
+| A documented Event History schema with `since`/`until` and pagination | Reliable day-one backfill and exact dedupe against webhooks (entry 12) | Important |
 
 ## Would we build with Ring again?
 

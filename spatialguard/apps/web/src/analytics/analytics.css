@@ -105,6 +105,8 @@
 .an-insight-points .trend-down > svg { color: #b4232c; }
 .an-insight-action { margin: 0; padding: 11px 13px; border-radius: 12px; background: #5b4fe814; color: #2c2873; font-size: 14px; line-height: 1.5; }
 .an-insight footer { color: var(--muted, #5b607f); font-size: 12px; }
+.an-insight-check { display: flex; align-items: center; gap: 6px; margin: 0; color: #1e6b45; font-size: 12px; }
+.an-insight-check.is-fallback { color: #8a5a00; }
 .an-insight-empty { display: grid; justify-items: start; gap: 8px; }
 .an-insight-empty p { margin: 0; color: #4b5070; font-size: 14px; max-width: 620px; }
 .an-primary { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 16px; border: 0; border-radius: 12px;

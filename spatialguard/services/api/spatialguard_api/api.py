@@ -586,9 +586,11 @@ def create_app(db_path=None, engine=None, ring_service=None):
             preferences = read_account_preferences(db, p["owner"])
             sites = [json.loads(row["data"]) for row in db.execute("SELECT data FROM sites WHERE owner=?", (p["owner"],))]
             site_ids = [site["id"] for site in sites]
-            incidents = []
+            incidents, vehicles = [], []
             for site_id in site_ids:
                 incidents.extend(json.loads(row["data"]) for row in db.execute("SELECT data FROM incidents WHERE site_id=?", (site_id,)))
+                vehicles.extend(dict(row) for row in db.execute(
+                    "SELECT site_id,camera_id,at,simulated FROM vehicle_events WHERE site_id=? ORDER BY at", (site_id,)))
             access = [dict(row) for row in db.execute(
                 "SELECT actor,action,device,purpose,result,at FROM data_access_log WHERE owner=? ORDER BY id", (p["owner"],)
             )]
@@ -597,7 +599,7 @@ def create_app(db_path=None, engine=None, ring_service=None):
             "format": "spatialguard-account-export-v1", "exported_at": now(),
             "account": dict(account) if account else {"workspace": "local"},
             "preferences": preferences,
-            "sites": sites, "incidents": incidents, "data_access": access,
+            "sites": sites, "incidents": incidents, "vehicle_events": vehicles, "data_access": access,
         }
 
     @app.get("/v1/account/preferences", response_model=m.AccountPreferences)
@@ -778,7 +780,7 @@ def create_app(db_path=None, engine=None, ring_service=None):
             with store.connect() as db:
                 db.execute("BEGIN IMMEDIATE")
                 for table in ("incidents", "evidence", "runs", "events", "observation_tracks", "site_insights",
-                          "site_alerts", "site_alert_settings"):
+                          "site_alerts", "site_alert_settings", "vehicle_events"):
                     db.execute(f"DELETE FROM {table} WHERE site_id=?", (engine_site,))  # nosec B608 - table from a fixed list; values are bound
                 db.execute("DELETE FROM sites WHERE id=? AND owner=?", (engine_site, p["owner"]))
                 db.execute("DELETE FROM plans WHERE engine_site=? AND owner=?", (engine_site, p["owner"]))
@@ -789,7 +791,7 @@ def create_app(db_path=None, engine=None, ring_service=None):
             db.execute("BEGIN IMMEDIATE")
             for site_id in site_ids:
                 for table in ("incidents", "evidence", "runs", "events", "observation_tracks", "site_insights",
-                          "site_alerts", "site_alert_settings"):
+                          "site_alerts", "site_alert_settings", "vehicle_events"):
                     db.execute(f"DELETE FROM {table} WHERE site_id=?", (site_id,))  # nosec B608 - table from a fixed list; values are bound
             for table in (
                 "sites", "plans", "sessions", "pairing", "audit", "account_preferences",
@@ -907,7 +909,7 @@ def create_app(db_path=None, engine=None, ring_service=None):
         with store.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             for table in ("incidents", "evidence", "runs", "events", "observation_tracks", "site_insights",
-                          "site_alerts", "site_alert_settings"):
+                          "site_alerts", "site_alert_settings", "vehicle_events"):
                 db.execute(f"DELETE FROM {table} WHERE site_id=?", (site_id,))  # nosec B608 - table from a fixed list; values are bound
             db.execute("DELETE FROM sites WHERE id=? AND owner=?", (site_id, p["owner"]))
             db.execute("DELETE FROM settings WHERE key=? AND value=?", (active_key(p), site_id))
@@ -1227,8 +1229,11 @@ def create_app(db_path=None, engine=None, ring_service=None):
         since = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
         changes = [r["at"] for r in db.execute(
             "SELECT at FROM audit WHERE owner=? AND action='layout.changed' AND at>=? ORDER BY at", (site["owner_id"], since))]
+        vehicles = [dict(r) for r in db.execute(
+            "SELECT camera_id, at, simulated FROM vehicle_events WHERE site_id=? AND at>=?",
+            (site["id"], (datetime.now(timezone.utc) - timedelta(days=15)).isoformat(timespec="seconds")))]
         return analytics.build(site, [json.loads(r["data"]) for r in rows], tracks.load(db, site["id"]), tz,
-                               layout_changes=changes, mode=mode)
+                               layout_changes=changes, mode=mode, vehicles=vehicles)
 
     def owned_for_analytics(db, site_id, p):
         site = owned(db, site_id, p)
@@ -1289,7 +1294,8 @@ def create_app(db_path=None, engine=None, ring_service=None):
             result = insights.generate(metrics)
         except insights.InsightUnavailable as exc:
             raise HTTPException(503, str(exc)) from None
-        insight = {key: result[key] for key in ("headline", "summary", "highlights", "recommendation", "model", "provider")}
+        insight = {key: result[key] for key in ("headline", "summary", "highlights", "recommendation", "model", "provider",
+                                                "checks")}
         insight.update(generated_at=now(), period_until=metrics["period"]["until"], visits=metrics["totals"]["visits"])
         with store.connect() as db:
             owned(db, site_id, p)

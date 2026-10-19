@@ -26,6 +26,9 @@ Definitions:
 * **Dwell** is the time between consecutive sightings of the same visit in
   the same zone, ignoring gaps longer than 15 seconds.
 
+**Vehicles** are Ring Smart Alerts ``vehicle`` motion events. They are
+counted on their own (by hour and camera) and never become visits.
+
 Positions are estimates unless cameras are calibrated. ``quality`` says how
 many visits come from detected paths, positioned sightings or estimates.
 
@@ -165,8 +168,51 @@ def _period_stats(period: list[dict], zone_names: list[str], tz) -> dict:
             "entrances": entrances, "avg_visit_s": _mean(durations)}
 
 
+def _vehicles(rows: list[dict], cameras: dict, start: datetime, end: datetime, previous_start: datetime,
+              tz, mode: str) -> dict:
+    """Ring Smart Alerts vehicle events: this period against the last, by hour and camera."""
+    hourly = [0] * 24
+    now_by_camera: dict[str, int] = defaultdict(int)
+    before_by_camera: dict[str, int] = defaultdict(int)
+    total = previous = simulated = 0
+    for row in rows:
+        try:
+            at = datetime.fromisoformat(str(row["at"]).replace("Z", "+00:00"))
+        except (KeyError, ValueError):
+            continue
+        if at.tzinfo is None:
+            at = at.replace(tzinfo=timezone.utc)
+        fake = bool(row.get("simulated"))
+        if fake and start <= at <= end:
+            simulated += 1
+        if mode == "live" and fake:
+            continue
+        if start <= at <= end:
+            total += 1
+            hourly[at.astimezone(tz).hour] += 1
+            now_by_camera[row["camera_id"]] += 1
+        elif previous_start <= at < start:
+            previous += 1
+            before_by_camera[row["camera_id"]] += 1
+    peak = max(range(24), key=lambda hour: hourly[hour]) if total else None
+    camera_ids = list(dict.fromkeys([*now_by_camera, *before_by_camera]))
+    return {
+        "total": total,
+        "previous": previous,
+        "change_pct": _change(total, previous),
+        "peak_hour": peak,
+        "peak_hour_count": hourly[peak] if peak is not None else 0,
+        "hourly": hourly,
+        "cameras": sorted(({"camera_id": camera_id, "name": cameras.get(camera_id, "Removed camera"),
+                            "count": now_by_camera.get(camera_id, 0), "previous": before_by_camera.get(camera_id, 0)}
+                           for camera_id in camera_ids), key=lambda item: -item["count"]),
+        "simulated": simulated,
+    }
+
+
 def build(site: dict, incidents: list[dict], tracks: dict, tz_name: str | None = None,
-          now: datetime | None = None, layout_changes: list[str] | None = None, mode: str = "all") -> dict:
+          now: datetime | None = None, layout_changes: list[str] | None = None, mode: str = "all",
+          vehicles: list[dict] | None = None) -> dict:
     tz = zone_info(tz_name)
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     # Whole local days: this period is the 7 days ending with today.
@@ -270,6 +316,8 @@ def build(site: dict, incidents: list[dict], tracks: dict, tz_name: str | None =
         "layout_changes": sorted(layout_changes or []),
         "mode": "live" if mode == "live" else "all",
         "simulated_visits": simulated_visits,
+        # Vehicles are counted separately and are never visits.
+        "vehicles": _vehicles(vehicles or [], camera_names, start, end, previous_start, tz, mode),
     }
 
 

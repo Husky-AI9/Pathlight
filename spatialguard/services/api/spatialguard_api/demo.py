@@ -229,6 +229,34 @@ def history(site: dict, now: datetime, tz, seed: int = 1) -> list[dict]:
     return result
 
 
+DROVE = 0.45  # share of café customers who arrive by car
+
+
+def vehicles(site: dict, incidents: list[dict], seed: int = 1, share: float = DROVE) -> list[dict]:
+    """Simulated Ring "vehicle" events: about half the customers arrive by car.
+
+    Each car is seen by the camera watching the parking area a minute or so
+    before its driver walks in. Uses its own random stream, so the customers
+    generated for a seed are unchanged.
+    """
+    parking = roles(site["layout"]).get("parking")
+    cameras = [c for c in site["layout"].get("cameras", []) if c.get("id")]
+    if not parking or not cameras:
+        return []
+    rng = random.Random(seed * 7919 + 17)  # nosec B311 - simulated traffic, not security
+    result = []
+    for incident in incidents:
+        if rng.random() >= share:
+            continue
+        x, y = _point(rng, parking)
+        start = datetime.fromisoformat(incident["started_at"].replace("Z", "+00:00"))
+        at = start - timedelta(seconds=rng.uniform(30, 90))
+        result.append({"id": RUN_PREFIX + "car_" + uid("v").split("_", 1)[-1][:12], "site_id": site["id"],
+                       "camera_id": _camera(cameras, x, y),
+                       "at": at.astimezone(timezone.utc).isoformat(timespec="seconds")})
+    return result
+
+
 def rush_customer(site: dict, rng: random.Random, now: datetime) -> dict | None:
     """Someone who just parked, came in and joined the counter queue."""
     areas = roles(site["layout"])
@@ -252,10 +280,17 @@ def _insert(db, incident: dict) -> None:
                (incident["id"], incident["site_id"], incident["run_id"], dump(incident)))
 
 
+def _insert_vehicles(db, cars: list[dict]) -> None:
+    for car in cars:
+        db.execute("INSERT OR IGNORE INTO vehicle_events(id, site_id, camera_id, at, simulated, source) "
+                   "VALUES (?,?,?,?,1,'demo')", (car["id"], car["site_id"], car["camera_id"], car["at"]))
+
+
 def clear(db, site_id: str) -> int:
-    """Remove simulated customers, the alerts they raised and insights written from them."""
+    """Remove simulated customers and cars, the alerts they raised and insights written from them."""
     removed = db.execute("DELETE FROM incidents WHERE site_id=? AND run_id LIKE ?",
                          (site_id, RUN_PREFIX + "%")).rowcount
+    db.execute("DELETE FROM vehicle_events WHERE site_id=? AND simulated=1", (site_id,))
     db.execute("DELETE FROM site_alerts WHERE site_id=? AND simulated=1", (site_id,))
     db.execute("DELETE FROM site_insights WHERE site_id=?", (site_id,))
     return removed
@@ -282,6 +317,9 @@ def _rush(store, site_id: str, customers: int, interval: float, stop: threading.
                 if not incident:
                     break
                 _insert(db, incident)
+                # Rush customers walk in from the car park, so most of them drove.
+                if rng.random() < 0.7:
+                    _insert_vehicles(db, vehicles(json.loads(row["data"]), [incident], rng.randrange(1_000_000), share=1.0))
                 event(db, site_id, "incident.created", incident["id"])
                 alerts.try_evaluate(db, site_id)
     finally:
@@ -444,6 +482,7 @@ def install(app, store, principal, owned, geometry_edit, engine):
             clear(db, site_id)
             for incident in incidents:
                 _insert(db, incident)
+            _insert_vehicles(db, vehicles(site, incidents, body.seed))
             event(db, site_id, "demo.history", site_id)
             audit(db, p["owner"], "demo.history", site_id)
             return status(db, site)
