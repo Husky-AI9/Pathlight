@@ -28,8 +28,13 @@ jobs:
             -e SPATIALGUARD_ALLOWED_HOSTS=127.0.0.1:8010 \
             -e SPATIALGUARD_ORIGIN=http://127.0.0.1:8010 spatialguard-ci
           for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:8010/health && break; sleep 2; done
-          curl -fsS http://127.0.0.1:8010/health
-          npm run test --workspace spatialguard-web
+          if ! curl -fsS http://127.0.0.1:8010/health; then
+            # Surface the container's own output as an annotation, not only in the raw log.
+            echo "::error title=Container did not start::$(docker logs spatialguard-ci 2>&1 | tail -25 | tr '\n' ' ' | cut -c1-1500)"
+            exit 1
+          fi
+          # The github reporter turns each failing test into an annotation on the run.
+          npm run test --workspace spatialguard-web -- --reporter=github,list
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21", cache: gradle }
       - run: npm run android:sync --workspace spatialguard-web

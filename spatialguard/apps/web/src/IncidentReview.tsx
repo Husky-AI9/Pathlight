@@ -79,7 +79,7 @@ export default function IncidentReview({ incident, cameras, step, onSelect, onCl
           </section> : incident.evidence_mode === "live" ? <section className="classification-card classification-empty">
             <strong>{incident.classification_status === "unavailable" ? "Classification unavailable" : "Not analyzed"}</strong>
             <button disabled={busy || !online || !consent} onClick={onAnalyze}>Analyze snapshot</button>
-            <p>{consent ? "Label this activity from the latest snapshot. The image is sent to OpenAI and not stored." : "Turn on snapshot analysis in Privacy settings to use this."}</p>
+            <p>{consent ? "Label this activity from the latest snapshot. The image is sent to Amazon Bedrock and not stored." : "Turn on snapshot analysis in Privacy settings to use this."}</p>
           </section> : null}
           <section className="evidence-inspector" aria-label="Selected evidence details">
             <h3>Evidence details</h3><dl>

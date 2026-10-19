@@ -3559,6 +3559,11 @@
             "title": "Classification Consent",
             "default": false
           },
+          "foot_traffic_consent": {
+            "type": "boolean",
+            "title": "Foot Traffic Consent",
+            "default": false
+          },
           "incident_retention_days": {
             "type": "integer",
             "enum": [
@@ -6581,7 +6586,8 @@
                 "type": "string",
                 "enum": [
                   "video_doorbell",
-                  "stick_up_cam"
+                  "stick_up_cam",
+                  "other"
                 ]
               },
               {
@@ -6631,6 +6637,22 @@
           "camera_id": {
             "type": "string",
             "title": "Camera Id"
+          },
+          "hardware_model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "video_doorbell",
+                  "stick_up_cam",
+                  "other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hardware Model"
           }
         },
         "additionalProperties": false,

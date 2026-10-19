@@ -613,21 +613,24 @@ def create_app(db_path=None, engine=None, ring_service=None):
             consent_changed = (
                 existing["ring_data_consent"] != body.ring_data_consent
                 or existing["classification_consent"] != body.classification_consent
+                or existing["foot_traffic_consent"] != body.foot_traffic_consent
             )
             # Snapshot classification necessarily uses Ring event data, so it
             # cannot remain enabled after the broader permission is withdrawn.
             classification_consent = bool(
                 body.classification_consent and body.ring_data_consent
             )
+            # Foot-traffic analysis reads Ring recordings, so it also needs the broader permission.
+            foot_traffic_consent = bool(body.foot_traffic_consent and body.ring_data_consent)
             consent_at = now() if consent_changed else existing["consent_updated_at"]
             db.execute(
                 """INSERT OR REPLACE INTO account_preferences(
                     owner,onboarding_completed,ring_data_consent,classification_consent,
-                    incident_retention_days,audit_retention_days,consent_updated_at
-                ) VALUES (?,?,?,?,?,?,?)""",
+                    foot_traffic_consent,incident_retention_days,audit_retention_days,consent_updated_at
+                ) VALUES (?,?,?,?,?,?,?,?)""",
                 (
                     p["owner"], int(body.onboarding_completed), int(body.ring_data_consent),
-                    int(classification_consent), body.incident_retention_days,
+                    int(classification_consent), int(foot_traffic_consent), body.incident_retention_days,
                     body.audit_retention_days, consent_at,
                 ),
             )

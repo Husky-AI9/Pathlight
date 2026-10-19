@@ -109,7 +109,7 @@ class Engine:
             rid='rev_traced_%d'%len(self.drafts)
             self.drafts[rid]=layout;self.versions[rid]=1
             if job['vision'] and not self.vision_fails:
-                report.update(backend='openai_vision_v1',vision_status='completed',label_reader='vision')
+                report.update(backend='bedrock_vision_v1',vision_status='completed',label_reader='vision')
             elif job['vision']:
                 report.update(vision_status='failed',vision_error='The vision proposal could not be validated.',
                     warning='The vision proposal could not be validated. Local generation was used instead. ')
@@ -469,9 +469,12 @@ def test_account_privacy_consent_and_permanent_deletion(tmp_path, monkeypatch):
     defaults = client.get('/v1/account/preferences').json()
     assert defaults == {
         'onboarding_completed': False, 'ring_data_consent': False,
-        'classification_consent': False, 'incident_retention_days': 90,
+        'classification_consent': False, 'foot_traffic_consent': False, 'incident_retention_days': 90,
         'audit_retention_days': 365, 'consent_updated_at': None,
     }
+    # Foot-traffic analysis cannot be on without the broader Ring permission.
+    lone = client.patch('/v1/account/preferences', json={**defaults, 'foot_traffic_consent': True})
+    assert lone.status_code == 200 and lone.json()['foot_traffic_consent'] is False
     assert client.post('/v1/ring/sign-in-code').status_code == 409
     with app.state.store.connect() as db:
         owner = db.execute('SELECT id FROM accounts WHERE email=?', ('privacy@example.com',)).fetchone()['id']
@@ -1046,3 +1049,4 @@ def test_renaming_rejects_unknown_spaces_empty_names_and_no_op_renames(setup):
                    ("s_other", "other", digest("other-token"), "Other", "browser", time.time() + 600))
     other = TestClient(app, headers={"Authorization": "Bearer other-token"})
     assert other.patch("/v1/sites/site_demo/rooms/room_study", json={"name": "Theirs"}).status_code == 404
+

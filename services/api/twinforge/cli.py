@@ -14,7 +14,7 @@ def main():
     )
     parser.add_argument("image", nargs="?", help="floor-plan image for trace-plan")
     parser.add_argument("--name", help="name for the new place")
-    parser.add_argument("--vision", action="store_true", help="send the plan to the configured OpenAI vision model")
+    parser.add_argument("--vision", action="store_true", help="send the plan to the configured Amazon Bedrock vision model")
     parser.add_argument(
         "--ceiling", type=float, default=2.6, help="assumed ceiling height in metres"
     )

@@ -20,7 +20,9 @@ export default function RingScene3D({ siteId, ...props }: ComponentProps<typeof 
   }, [siteId]);
   const factory = useCallback<CameraModelFactory>((id, active, heading, mount) => {
     const device = devices.find(d => d.site_id === siteId && d.camera_id === id);
-    return ringCameraModel(device?.hardware_model ?? "stick_up_cam", id, active, heading, mount);
+    // The owner says what is mounted while pairing; anything else draws the generic camera body.
+    const kind = device?.hardware_model === "video_doorbell" ? "video_doorbell" : "stick_up_cam";
+    return ringCameraModel(kind, id, active, heading, mount);
   }, [devices, siteId]);
   return <Scene3D {...props} cameraModelFactory={factory} />;
 }

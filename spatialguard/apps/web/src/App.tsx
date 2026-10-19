@@ -142,6 +142,8 @@ export default function App() {
     [selected, setSelected] = useState<Incident | null>(null),
     [cameras, setCameras] = useState<CameraStatus[]>([]);
   const [ringSetupOpen, setRingSetupOpen] = useState(returnedFromRing);
+  // Whether a Ring account is linked: the phone's "Connect Ring cameras" prompt only shows when it is not.
+  const [ringLinked, setRingLinked] = useState(false);
   const [settingsPage, setSettingsPage] = useState<SettingsPage>("menu");
   const [ready, setReady] = useState(false),
     [paired, setPaired] = useState(!native),
@@ -470,6 +472,14 @@ export default function App() {
   }, [site?.id, planAsset]);
   const sampleLoaded = sites.some((s) => s.name === "Demo home");
   // Hooks must run before the early returns below.
+  useEffect(() => {
+    if (!paired) return;
+    let active = true;
+    void request<{ state: string }>("/v1/ring")
+      .then((status) => { if (active) setRingLinked(status.state === "connected"); })
+      .catch(() => { if (active) setRingLinked(false); });
+    return () => { active = false; };
+  }, [paired, ringVersion, ringSetupOpen]);
   const simulatedCameras = site?.simulated_camera_ids ?? [];
   const moving = useLiveMotion(incidents, site?.id, simulatedCameras);
   const crowd = useCrowdAlert(site?.id);
@@ -1294,11 +1304,11 @@ export default function App() {
                 detail
               ) : tab === "Home" ? (
                 <>
-                <button className="mobile-ring-setup" onClick={() => setRingSetupOpen(true)}>
+                {!ringLinked && <button className="mobile-ring-setup" onClick={() => setRingSetupOpen(true)}>
                   <Link2 size={19} />
                   <span><strong>Connect Ring cameras</strong><small>Link your Ring account</small></span>
                   <ArrowUpRight size={17} />
-                </button>
+                </button>}
                 <div className="home-dashboard">
                   {map}
                   <aside
@@ -1456,6 +1466,7 @@ export default function App() {
                           ...accountPreferences,
                           ring_data_consent: event.target.checked,
                           classification_consent: event.target.checked ? accountPreferences.classification_consent : false,
+                          foot_traffic_consent: event.target.checked ? accountPreferences.foot_traffic_consent : false,
                         })} />
                       <span><strong>Ring cameras</strong><small>Live view, events and camera status.</small></span>
                     </label>
@@ -1463,7 +1474,13 @@ export default function App() {
                       <input type="checkbox" disabled={!accountPreferences.ring_data_consent}
                         checked={accountPreferences.classification_consent}
                         onChange={(event) => setAccountPreferences({ ...accountPreferences, classification_consent: event.target.checked })} />
-                      <span><strong>Activity labels</strong><small>Event snapshots are sent to OpenAI to label activity.</small></span>
+                      <span><strong>Activity labels</strong><small>Event snapshots are sent to Amazon Bedrock to label activity.</small></span>
+                    </label>
+                    <label className="consent-choice">
+                      <input type="checkbox" disabled={!accountPreferences.ring_data_consent}
+                        checked={!!accountPreferences.foot_traffic_consent}
+                        onChange={(event) => setAccountPreferences({ ...accountPreferences, foot_traffic_consent: event.target.checked })} />
+                      <span><strong>Foot-traffic analysis</strong><small>People in your Ring recordings are detected to map where visitors walk. No faces or identities; each recording is deleted after analysis. Tell visitors that cameras are in use, for example with a sign at the door.</small></span>
                     </label>
                     <div className="retention-grid">
                       <label>Visit retention

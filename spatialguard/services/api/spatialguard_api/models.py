@@ -63,7 +63,7 @@ class PlanInput(Model):
     media_type: Literal["image/png", "image/jpeg"]
     data_base64: str = Field(max_length=8_000_000)
     ceiling_height_m: float = Field(default=2.6, gt=0, le=20)
-    # Opt-in: sends this drawing to OpenAI from the TwinForge server.
+    # Opt-in: sends this drawing to Amazon Bedrock from the TwinForge server.
     vision_assisted: bool = False
 
 
@@ -82,7 +82,7 @@ class PlanJob(Model):
     label_reader: str | None = None
     warning: str | None = None
     error: str | None = None
-    # "completed" when GPT Sol produced the geometry, "failed" when TwinForge fell
+    # "completed" when Amazon Bedrock read the drawing, "failed" when TwinForge fell
     # back to local tracing, None when vision was never requested.
     vision_status: Literal["completed", "failed"] | None = None
     vision_error: str | None = None
@@ -240,6 +240,8 @@ class AccountPreferences(Model):
     onboarding_completed: bool = False
     ring_data_consent: bool = False
     classification_consent: bool = False
+    # Person detection on Ring clips to map where visitors walk (heatmap, analytics, alerts).
+    foot_traffic_consent: bool = False
     incident_retention_days: Literal[30, 90, 365] = 90
     audit_retention_days: Literal[90, 365, 730] = 365
     consent_updated_at: str | None = None

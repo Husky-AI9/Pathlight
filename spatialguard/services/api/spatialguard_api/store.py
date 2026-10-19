@@ -31,6 +31,9 @@ DEFAULT_ACCOUNT_PREFERENCES = {
     "onboarding_completed": False,
     "ring_data_consent": False,
     "classification_consent": False,
+    # Mapping where people walk derives data about people on camera, so it needs
+    # its own explicit owner consent (Ring Appstore Content Policy 1.2.4).
+    "foot_traffic_consent": False,
     "incident_retention_days": 90,
     "audit_retention_days": 365,
     "consent_updated_at": None,
@@ -62,6 +65,7 @@ def account_preferences(db, owner, create=True):
                 "SELECT 1 FROM ring_accounts WHERE owner=? AND state='connected'", (owner,)
             ).fetchone()
             result["ring_data_consent"] = bool(linked)
+            result["foot_traffic_consent"] = bool(linked)
             if linked:
                 for site_row in db.execute("SELECT data FROM sites WHERE owner=?", (owner,)):
                     try:
@@ -73,7 +77,7 @@ def account_preferences(db, owner, create=True):
         return result
     result = dict(row)
     result.pop("owner", None)
-    for key in ("onboarding_completed", "ring_data_consent", "classification_consent"):
+    for key in ("onboarding_completed", "ring_data_consent", "classification_consent", "foot_traffic_consent"):
         result[key] = bool(result[key])
     return result
 
@@ -220,6 +224,9 @@ class Store:
                 detail TEXT NOT NULL, at TEXT NOT NULL
             );
             ''')
+            preference_columns = {row['name'] for row in db.execute('PRAGMA table_info(account_preferences)')}
+            if 'foot_traffic_consent' not in preference_columns:
+                db.execute('ALTER TABLE account_preferences ADD COLUMN foot_traffic_consent INTEGER NOT NULL DEFAULT 0')
             alert_columns = {row['name'] for row in db.execute('PRAGMA table_info(site_alerts)')}
             if 'simulated' not in alert_columns:
                 db.execute('ALTER TABLE site_alerts ADD COLUMN simulated INTEGER NOT NULL DEFAULT 0')

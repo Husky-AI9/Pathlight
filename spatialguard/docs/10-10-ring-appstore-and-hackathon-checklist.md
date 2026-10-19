@@ -62,7 +62,7 @@ These are the highest-risk approval items. Resolve them before spending time on 
 - [ ] **MANUAL â€” Confirm the public-app use case with Ring.** Describe SpatialGuard as single-owner, camera-based evidence organization with unknown gaps. Do not describe it as continuous person tracking, identity recognition, intent detection, or guaranteed security.
 - [ ] **MANUAL â€” Ask Ring for a written decision on camera uptime history and alerts.** Ring Program Requirement 2.4 prohibits using Ring services to monitor the availability, performance, or functionality of Amazon products or services. A simple current online/offline display is part of Ring's UX guidance, but a seven-day uptime monitor and outage-alert product may conflict with the program requirement.
 - [ ] **MANUAL â€” Decide whether to remove uptime history/alerts from the certification build unless Ring approves them in writing.** Preserve the required current online/offline device state.
-- [ ] **MANUAL â€” Confirm that sending an opted-in Ring snapshot to OpenAI is permitted.** Record the Ring response, approved purpose, data flow, retention, model-training status, and any territorial limitation.
+- [ ] **MANUAL â€” Confirm that sending an opted-in Ring snapshot to Amazon Bedrock is permitted (OpenAI was removed on 2026-10-01; see ring-appstore-review.md).** Record the Ring response, approved purpose, data flow, retention, model-training status, and any territorial limitation.
 - [ ] **MANUAL â€” Decide whether the first certification build disables third-party snapshot classification.** Disabling it until written approval is the lower-risk release path.
 - [ ] **MANUAL â€” Confirm target territory.** Current Ring Program Requirements limit distribution to the United States unless Ring approves otherwise.
 - [ ] **EXTERNAL REVIEW â€” Have privacy counsel review the final privacy policy, terms, consent language, deletion behavior, and camera/AI disclosures.** The existing pages are preview disclosures, not final legal approval.
@@ -79,7 +79,7 @@ These are the highest-risk approval items. Resolve them before spending time on 
 ### Codex â€” document and asset work
 
 - [ ] **CODEX â€” DOCUMENT â€” Produce a one-page product claims matrix.** For every marketing statement, identify the supporting test and the exact limitation. Treat unsupported accuracy, prevention, safety, and real-time claims as prohibited.
-- [ ] **CODEX â€” DOCUMENT â€” Draw the certification data-flow diagram.** Cover Ring â†’ SpatialGuard â†’ Railway storage â†’ optional OpenAI processing, encryption boundaries, retention, deletion, logs, and backups.
+- [ ] **CODEX â€” DOCUMENT â€” Draw the certification data-flow diagram.** Cover Ring â†’ SpatialGuard â†’ Railway storage â†’ optional Amazon Bedrock processing, encryption boundaries, retention, deletion, logs, and backups.
 - [ ] **CODEX â€” DOCUMENT â€” Create a complete Ring-data inventory.** List every field, purpose, storage location, encryption state, retention period, deletion path, and downstream recipient.
 - [ ] **CODEX â€” DOCUMENT â€” Draft the AI governance packet.** Include model/version control, evaluation set, known edge cases, false-positive handling, human review, drift monitoring, feature rollback, and a statement that no Ring data trains SpatialGuard or a third-party model unless specifically authorized.
 
@@ -149,7 +149,7 @@ These are the highest-risk approval items. Resolve them before spending time on 
 - [ ] **MANUAL â€” Define how Railway backups and archived copies satisfy deletion requests.** Current logical deletion does not establish deletion from infrastructure backups.
 - [ ] **MANUAL â€” Rotate every credential that was copied into chat, local terminals, screenshots, or old deployment variables.** Confirm old credentials no longer work.
 - [ ] **MANUAL â€” Configure a monitored support address, abuse-report channel, security contact, and incident-response owner.** Test that messages receive a response.
-- [ ] **EXTERNAL REVIEW â€” Review OpenAI, Railway, email-provider, and analytics contracts/data terms.** Record subprocessors, locations, retention, breach notification, and deletion commitments.
+- [ ] **EXTERNAL REVIEW â€” Review Amazon Bedrock (AWS), Railway, email-provider, and analytics contracts/data terms.** Record subprocessors, locations, retention, breach notification, and deletion commitments.
 - [ ] **EXTERNAL REVIEW â€” Complete a threat model and penetration test after the production architecture is frozen.** Retest all high/critical findings.
 
 ### Codex â€” software work
@@ -277,12 +277,12 @@ These are the highest-risk approval items. Resolve them before spending time on 
 
 ### Codex â€” documents and assets
 
-- [ ] **CODEX â€” DOCUMENT â€” Create `JUDGES.md`.** Include a five-minute test path, credentials location, expected results, replay/live labels, limitations, troubleshooting, and support contact.
+- [x] **CODEX â€” DOCUMENT â€” Create `JUDGES.md`.** Added at the repository root with a heatmap/property-insights judge path and maintainer checklist (2026-10-07). Include a five-minute test path, credentials location, expected results, replay/live labels, limitations, troubleshooting, and support contact.
 - [ ] **CODEX â€” DOCUMENT â€” Create a submission-period change log.** Clearly distinguish the pre-August-31 baseline from substantial work completed during the hackathon window.
 - [ ] **CODEX â€” DOCUMENT â€” Produce a software bill of materials and third-party attribution list.** Confirm licenses for icons, 3D assets, fonts, screenshots, test video, OpenCV/model weights, and generated imagery.
 - [ ] **CODEX â€” DOCUMENT â€” Draft the Devpost description and product-feedback answers.** Explain what Ring tools were used, what worked, what needs improvement, onboarding experience, and whether the team would build with them again.
 - [x] **CODEX â€” DOCUMENT â€” Maintain a Ring developer friction log with task, steps, expected/actual behavior, severity, workaround, and actionable suggestion.**
-- [ ] **CODEX â€” DOCUMENT â€” Edit the friction log for submission.** Remove sensitive details, add evidence dates, prioritize the strongest entries, and ensure each claim is reproducible.
+- [x] **CODEX â€” DOCUMENT â€” Edit the friction log for submission.** Rewritten as root `FRICTION_LOG.md`: 10 dated entries with status, evidence and tests, plus feature requests (2026-10-07). Remove sensitive details, add evidence dates, prioritize the strongest entries, and ensure each claim is reproducible.
 
 ## B2. Tech Implementation â€” 10/10 target
 
@@ -429,6 +429,6 @@ Recheck these sources before certification or submission because requirements ca
 - `spatialguard/docs/verification.md`
 - `spatialguard/docs/ring-feasibility.md`
 - `spatialguard/docs/hosted-ring-link-verification.md`
-- `spatialguard/Ring Developer Friction Log.txt`
-- `spatialguard/README.md`
+- `FRICTION_LOG.md`
+- `README.md` and `JUDGES.md`
 - `docs/known-limits.md`

@@ -120,7 +120,9 @@ def process_one(ring, store) -> bool:
         db.execute("UPDATE observation_tracks SET state='running', lease=?, attempts=? WHERE incident_id=? AND observation_id=?",
                    (time.time() + LEASE_S, row["attempts"], row["incident_id"], row["observation_id"]))
         owner = db.execute("SELECT owner FROM sites WHERE id=?", (row["site_id"],)).fetchone()
-        consent = bool(owner) and account_preferences(db, owner["owner"])["ring_data_consent"]
+        preferences = account_preferences(db, owner["owner"]) if owner else {}
+        # Mapping visitors' paths needs both Ring access and the separate foot-traffic consent.
+        consent = bool(preferences.get("ring_data_consent") and preferences.get("foot_traffic_consent"))
     if not owner or not consent:
         _finish(store, row, "skipped")
         return True

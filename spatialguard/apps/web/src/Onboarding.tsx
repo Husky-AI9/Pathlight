@@ -8,6 +8,7 @@ export type AccountPreferences = {
   onboarding_completed: boolean;
   ring_data_consent: boolean;
   classification_consent: boolean;
+  foot_traffic_consent?: boolean;
   incident_retention_days: 30 | 90 | 365;
   audit_retention_days: 90 | 365 | 730;
   consent_updated_at: string | null;
@@ -59,20 +60,26 @@ export default function Onboarding({
       <label className="consent-choice">
         <input type="checkbox" checked={draft.ring_data_consent}
           onChange={(event) => setDraft({ ...draft, ring_data_consent: event.target.checked,
-            classification_consent: event.target.checked ? draft.classification_consent : false })} />
+            classification_consent: event.target.checked ? draft.classification_consent : false,
+            foot_traffic_consent: event.target.checked ? draft.foot_traffic_consent : false })} />
         <span><strong>Ring cameras</strong><small>Live view, events and camera status.</small></span>
       </label>
       <label className="consent-choice">
         <input type="checkbox" disabled={!draft.ring_data_consent} checked={draft.classification_consent}
           onChange={(event) => setDraft({ ...draft, classification_consent: event.target.checked })} />
-        <span><strong>Activity labels</strong><small>Event snapshots are sent to OpenAI to label activity. No face recognition.</small></span>
+        <span><strong>Activity labels</strong><small>Event snapshots are sent to Amazon Bedrock to label activity. No face recognition.</small></span>
+      </label>
+      <label className="consent-choice">
+        <input type="checkbox" disabled={!draft.ring_data_consent} checked={!!draft.foot_traffic_consent}
+          onChange={(event) => setDraft({ ...draft, foot_traffic_consent: event.target.checked })} />
+        <span><strong>Foot-traffic analysis</strong><small>People in your Ring recordings are detected to map where visitors walk. No faces or identities; each recording is deleted after analysis. Tell visitors that cameras are in use, for example with a sign at the door.</small></span>
       </label>
       <p className="fine">You can change these later in Settings.</p>
     </div>,
     <div className="onboarding-copy" key="map">
       <span className="onboarding-icon"><Map size={24} /></span>
       <h2>Add your floor plan</h2>
-      <p>Upload a drawing of your home, then place your cameras on it.</p>
+      <p>Upload a drawing of your space, then place your cameras on it.</p>
       <div className="onboarding-map-actions">
         <button className="primary" onClick={onUploadPlan}>Upload floor plan</button>
         <button onClick={onLoadSample}>Try the demo home</button>

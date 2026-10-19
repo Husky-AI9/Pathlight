@@ -1658,6 +1658,11 @@ export interface components {
              */
             classification_consent: boolean;
             /**
+             * Foot Traffic Consent
+             * @default false
+             */
+            foot_traffic_consent: boolean;
+            /**
              * Incident Retention Days
              * @default 90
              * @enum {integer}
@@ -2790,7 +2795,7 @@ export interface components {
             /** Camera Id */
             camera_id: string | null;
             /** Hardware Model */
-            hardware_model?: ("video_doorbell" | "stick_up_cam") | null;
+            hardware_model?: ("video_doorbell" | "stick_up_cam" | "other") | null;
             /** Support */
             support?: {
                 [key: string]: boolean;
@@ -2806,6 +2811,8 @@ export interface components {
             site_id: string;
             /** Camera Id */
             camera_id: string;
+            /** Hardware Model */
+            hardware_model?: ("video_doorbell" | "stick_up_cam" | "other") | null;
         };
         /** RingStatus */
         RingStatus: {

@@ -710,7 +710,8 @@ export default function Workspace({ onSignout }: { onSignout: () => void }) {
           <Label style={s.heading}>Privacy</Label>
           {([
             ["ring_data_consent", "Ring cameras", "Live view, events and camera status."],
-            ["classification_consent", "Activity labels", "Event snapshots are sent to OpenAI to label activity."],
+            ["classification_consent", "Activity labels", "Event snapshots are sent to Amazon Bedrock to label activity."],
+            ["foot_traffic_consent", "Foot-traffic analysis", "People in your Ring recordings are detected to map where visitors walk. No faces or identities; each recording is deleted after analysis. Tell visitors that cameras are in use, for example with a sign at the door."],
           ] as const).map(([key, name, detail]) => (
             <View key={key} style={[s.row, { paddingVertical: 6, borderTopWidth: 1, borderColor: colors.line }]}>
               <View style={{ flex: 1 }}>
@@ -720,7 +721,7 @@ export default function Workspace({ onSignout }: { onSignout: () => void }) {
               <Switch
                 accessibilityLabel={name}
                 value={!!prefs?.[key]}
-                disabled={busy || (key === "classification_consent" && !prefs?.ring_data_consent)}
+                disabled={busy || (key !== "ring_data_consent" && !prefs?.ring_data_consent)}
                 onValueChange={(v) => void action(() => patch({ [key]: v }))}
                 trackColor={{ true: colors.purple, false: "#bfc2d1" }}
                 thumbColor="#ffffff"

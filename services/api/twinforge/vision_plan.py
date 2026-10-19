@@ -3,7 +3,9 @@ import base64
 import io
 import json
 import os
+import re
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Literal
 
@@ -129,46 +131,61 @@ def request_proposal(image, correction=None):
     return _request(image, prompt, PlanProposal, "floor_plan", 12000)
 
 
+DEFAULT_MODEL = "us.amazon.nova-pro-v1:0"
+MAX_SIDE = 2048  # Bedrock image headroom; coordinates are normalised, so scaling is free
+MAX_OUTPUT_TOKENS = 5000
+
+
+def available() -> bool:
+    return bool(os.environ.get("AWS_BEARER_TOKEN_BEDROCK", "").strip())
+
+
 def _request(image, prompt, schema, name, max_tokens):
-    key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not key:
-        raise VisionUnavailable("OpenAI key is not configured on the server.")
-    model = os.environ.get("TWINFORGE_VISION_MODEL", "gpt-5.6-sol")
+    """One Amazon Bedrock Converse call: the drawing plus instructions, JSON back."""
+    token = os.environ.get("AWS_BEARER_TOKEN_BEDROCK", "").strip()
+    if not token:
+        raise VisionUnavailable("Amazon Bedrock is not configured on the server.")
+    region = os.environ.get("AWS_REGION", "").strip() or "us-west-2"
+    # The region becomes part of the host name, so only accept a real region code.
+    if not re.fullmatch(r"[a-z]{2}(-[a-z]+)+-\d", region):
+        raise VisionUnavailable("Amazon Bedrock is not configured on the server.")
+    model = os.environ.get("TWINFORGE_BEDROCK_MODEL", "").strip() or DEFAULT_MODEL
+    picture = image.convert("RGB")
+    picture.thumbnail((MAX_SIDE, MAX_SIDE))
     buffer = io.BytesIO()
-    image.convert("RGB").save(buffer, format="PNG")
-    content = [{"type": "input_text", "text": prompt},
-               {"type": "input_image", "detail": "high",
-                "image_url": "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode()}]
-    payload = {"model": model, "store": False, "max_output_tokens": max_tokens,
-               "reasoning": {"effort": "medium"},
-               "input": [{"role": "user", "content": content}],
-               "text": {"format": {"type": "json_schema", "name": name,
-                                    "strict": True, "schema": schema.model_json_schema()}}}
-    request = urllib.request.Request("https://api.openai.com/v1/responses",
-        data=json.dumps(payload).encode(), method="POST",
-        headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"})
+    picture.save(buffer, format="PNG")
+    instructions = (prompt + "\n\nReply with ONE JSON object only, no prose, matching this JSON schema ("
+                    + name + "):\n" + json.dumps(schema.model_json_schema()))
+    payload = {
+        "messages": [{"role": "user", "content": [
+            {"text": instructions},
+            {"image": {"format": "png", "source": {"bytes": base64.b64encode(buffer.getvalue()).decode()}}},
+        ]}],
+        "inferenceConfig": {"maxTokens": min(max_tokens, MAX_OUTPUT_TOKENS), "temperature": 0},
+    }
+    url = (f"https://bedrock-runtime.{region}.amazonaws.com/model/"
+           f"{urllib.parse.quote(model, safe='')}/converse")
+    request = urllib.request.Request(url, data=json.dumps(payload).encode(), method="POST",
+        headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"})
     try:
-        with urllib.request.urlopen(request, timeout=240) as response:
+        with urllib.request.urlopen(request, timeout=240) as response:  # nosec B310 - fixed https Bedrock URL
             result = json.load(response)
     except urllib.error.HTTPError as exc:
-        # Never forward provider error bodies: authentication errors can echo keys.
-        messages = {401: "OpenAI rejected the server API key.",
-                    403: "OpenAI denied access to the requested model.",
-                    404: "The configured OpenAI model is unavailable.",
-                    429: "OpenAI quota or rate limit was reached."}
-        raise VisionUnavailable(messages.get(exc.code, f"OpenAI request failed (HTTP {exc.code}).")) from None
+        # Never forward provider error bodies: authentication errors can echo credentials.
+        messages = {401: "Amazon Bedrock rejected the server credentials.",
+                    403: "Amazon Bedrock denied access to the requested model.",
+                    404: "The configured Bedrock model is unavailable.",
+                    429: "Amazon Bedrock quota or rate limit was reached."}
+        raise VisionUnavailable(messages.get(exc.code, f"Amazon Bedrock request failed (HTTP {exc.code}).")) from None
     except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
-        raise VisionUnavailable("The OpenAI request timed out or could not be completed.") from None
-    if result.get("status") != "completed":
-        raise VisionUnavailable("OpenAI did not complete the floor-plan response.")
-    output = "".join(part.get("text", "") for item in result.get("output", [])
-                     if item.get("type") == "message" for part in item.get("content", [])
-                     if part.get("type") == "output_text")
+        raise VisionUnavailable("The Amazon Bedrock request timed out or could not be completed.") from None
     try:
-        proposal = schema.model_validate_json(output)
-    except ValidationError:
-        raise VisionUnavailable("OpenAI returned an unreadable or incomplete floor-plan proposal.") from None
-    return proposal, {"model": model, "response_id": result.get("id"), "usage": result.get("usage", {})}
+        output = "".join(part.get("text", "") for part in result["output"]["message"]["content"])
+        match = re.search(r"\{.*\}", output, re.S)
+        proposal = schema.model_validate_json(match.group(0) if match else output)
+    except (KeyError, TypeError, ValidationError):
+        raise VisionUnavailable("Amazon Bedrock returned an unreadable or incomplete floor-plan proposal.") from None
+    return proposal, {"model": model, "response_id": None, "usage": result.get("usage", {})}
 
 
 def proposal_to_layout(proposal, image_size, asset_id=None, ceiling_height_m=2.6):
@@ -281,7 +298,7 @@ def generate_vision_layout(image, *, asset_id=None, ceiling_height_m=2.6):
             break
         try:
             layout = proposal_to_layout(proposal, image.size, asset_id, ceiling_height_m)
-            return layout, {"backend": "openai_vision_v1", "generation_mode": "rooms",
+            return layout, {"backend": "bedrock_vision_v1", "generation_mode": "rooms",
                 "vision_status": "completed", **metadata, "attempts": attempt+1,
                 "spaces_kept": len(layout.rooms), "connections": len(layout.portals),
                 "label_reader": "vision", "scale_basis": proposal.scale_explanation,

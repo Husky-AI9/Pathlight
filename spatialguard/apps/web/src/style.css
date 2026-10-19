@@ -3721,6 +3721,17 @@ select.site-name {
 .pair-device-text small { color: var(--muted); font-size: 13px; }
 .pair-sheet-error { margin: 0; color: #b4232c; font-size: 13px; }
 .pair-sheet-refresh { justify-self: center; min-height: 36px; padding: 6px 14px; font-size: 14px; color: var(--muted); }
+.pair-model { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.pair-model legend { padding: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--ink); }
+.pair-model-option { display: flex; align-items: center; cursor: pointer; }
+.pair-model-option input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.pair-model-option[data-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.pair-model-option:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .pair-model-option:hover { border-color: var(--accent); }
+}
+.pair-model-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.pair-model-actions .primary { min-width: 150px; }
 @media (max-width: 760px) {
   .sheet-backdrop { align-items: flex-end; }
   .sheet-backdrop .modal.pair-sheet {
@@ -4042,6 +4053,8 @@ button.quiet-danger { color: #b4232c; border-color: #f0c2c7; background: #fff; }
 .brand { display: flex; flex-direction: row; align-items: center; }
 .brand svg.pl-mark { width: auto; height: 27px; }
 .brand .pl-wordmark { font-size: 21px; }
+/* Phones use the sidebar as a bottom tab bar: keep the logo out of it (overrides .brand above). */
+@media (max-width: 640px) { .brand { display: none; } }
 .legal-brand > span:first-child { width: auto; height: auto; background: none; }
 .legal-brand > .pl-wordmark { display: inline; width: auto; height: auto; background: none; color: #1e1b4b; font-size: 18px; }
 

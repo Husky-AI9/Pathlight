@@ -175,7 +175,7 @@ def generation_options(engine):
 
 
 def trace_plan(engine, site_id, asset_id, ceiling_height_m, vision_assisted=False):
-    # vision_assisted sends the drawing to OpenAI from the TwinForge worker. The owner
+    # vision_assisted sends the drawing to Amazon Bedrock from the TwinForge worker. The owner
     # opts in per import; TwinForge falls back to local tracing if the model fails.
     return engine.request(f"/v1/sites/{site_id}/imports", "POST", {
         "kind": "floorplan_raster", "asset_id": asset_id,

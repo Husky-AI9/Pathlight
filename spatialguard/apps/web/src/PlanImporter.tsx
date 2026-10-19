@@ -214,7 +214,7 @@ export default function PlanImporter({
                 <small>
                   {checkingVision ? "Checking availability…"
                     : !visionAvailable ? "Not available right now"
-                      : "Your drawing is sent to OpenAI to read its labels."}
+                      : "Your drawing is sent to Amazon Bedrock to read its labels."}
                 </small>
               </span>
             </label>

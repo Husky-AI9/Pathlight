@@ -20,6 +20,9 @@ def capabilities() -> dict:
         "profile": profile,
         "classification": _enabled("SPATIALGUARD_FEATURE_CLASSIFICATION", not conservative),
         "timelapse": _enabled("SPATIALGUARD_FEATURE_TIMELAPSE", not conservative),
+        # Owner-facing camera health (offline alerts, 7-day history) is a certified
+        # Ring Appstore use (e.g. Cam Uptime Alerts); only the conservative
+        # certification profile turns it off.
         "uptime_history": _enabled("SPATIALGUARD_FEATURE_UPTIME_HISTORY", not conservative),
         "offline_alerts": _enabled("SPATIALGUARD_FEATURE_OFFLINE_ALERTS", not conservative),
         "test_video": _enabled("SPATIALGUARD_FEATURE_TEST_VIDEO", profile in {"preview", "reviewer"}),

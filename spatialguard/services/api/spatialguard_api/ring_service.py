@@ -14,35 +14,21 @@ from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-from urllib.parse import quote, urlparse
+from urllib.parse import quote
 from fastapi import HTTPException
 from .store import Store, DATA, account_preferences, digest, dump, uid, now, event, audit
 from .mail import send as send_mail
 from .ring_provider import Provider, ServerVault, WindowsVault, credentials
 
+# Camera types an owner can choose while pairing. Ring's device resource has no
+# device-type field, and Ring's docs say not to infer one from image_url, so the
+# owner says what is mounted at each spot. "other" draws a generic camera.
+OWNER_HARDWARE = ('video_doorbell', 'stick_up_cam', 'other')
 
-def hardware_model(attributes):
-    """Presentation family from Ring's product artwork, never the user's device name.
 
-    The official inventory currently supplies name/image_url, not a model field.
-    Recognize explicit product filenames; keep unfamiliar hardware unknown.
-    Do not fetch the image or expose provider URLs to clients.
-    """
-    url = attributes.get('image_url')
-    if not isinstance(url, str):
-        return None
-    try:
-        parsed = urlparse(url)
-        if parsed.scheme != 'https' or parsed.hostname != 'app-content.ring.com':
-            return None
-        name = parsed.path.rsplit('/', 1)[-1].lower().replace('-', '_')
-    except ValueError:
-        return None
-    if name.startswith(('rvd_', 'video_doorbell_')):
-        return 'video_doorbell'
-    if name.startswith(('stick_up_cam_', 'stickup_cam_', 'stickupcam_')):
-        return 'stick_up_cam'
-    return None
+def owner_hardware(value):
+    """The owner's choice for a paired device; None until they choose one."""
+    return value if value in OWNER_HARDWARE else None
 
 
 def capability_summary(capabilities):
@@ -190,6 +176,8 @@ class RingService:
                 db.execute('ALTER TABLE ring_inbox ADD COLUMN error TEXT')
             if 'provider_request' not in columns:
                 db.execute('ALTER TABLE ring_inbox ADD COLUMN provider_request TEXT')
+            if 'hardware' not in {row['name'] for row in db.execute('PRAGMA table_info(ring_devices)')}:
+                db.execute('ALTER TABLE ring_devices ADD COLUMN hardware TEXT')
 
     def _record_health(self, db, account, device, online, source, at=None):
         at = float(at or time.time())
@@ -516,7 +504,7 @@ class RingService:
                     guidance.append('This authorized Ring device does not report camera video support, so live view and snapshots are unavailable.')
                 normalized.append({'id': d['id'], 'name': attrs.get('description') or attrs.get('name') or 'Ring device',
                                    'status': status, 'capabilities': caps, 'checked_at': now(),
-                                   'hardware_model': hardware_model(attrs), 'support': support,
+                                   'support': support,
                                    'configuration': configuration, 'guidance': guidance})
             with self.store.connect() as db:
                 if not db.execute("SELECT 1 FROM ring_accounts WHERE account=? AND generation=? AND state='connected'", (a['account'], a['generation'])).fetchone():
@@ -535,9 +523,16 @@ class RingService:
                            'ON CONFLICT(account) DO UPDATE SET subscription=excluded.subscription,checked_at=excluded.checked_at',
                            (a['account'], dump(subscription), now()))
         with self.store.connect() as db:
-            return [{**json.loads(r['data']), 'site_id':r['site'], 'camera_id':r['camera']} for r in db.execute('SELECT * FROM ring_devices WHERE account=?', (a['account'],))]
+            # hardware_model is the owner's choice only; older cached rows may still
+            # carry an artwork-derived value in data, which this replaces.
+            return [{**json.loads(r['data']), 'site_id':r['site'], 'camera_id':r['camera'],
+                     'hardware_model': owner_hardware(r['hardware'])}
+                    for r in db.execute('SELECT * FROM ring_devices WHERE account=?', (a['account'],))]
 
-    def mapping(self, owner, device, site, camera):
+    def mapping(self, owner, device, site, camera, hardware=None):
+        """Pair a Ring device with a map camera; ``hardware`` records what the owner says it is."""
+        if hardware is not None and hardware not in OWNER_HARDWARE:
+            raise HTTPException(422, 'Choose a doorbell, a Stick Up Cam or another Ring camera')
         a = self.account(owner)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -546,7 +541,8 @@ class RingService:
                 raise HTTPException(404, 'Camera not found in this site')
             if db.execute('SELECT 1 FROM ring_devices WHERE site=? AND camera=? AND device<>?', (site, camera, device)).fetchone():
                 raise HTTPException(409, 'This camera is already mapped to a Ring device')
-            if not db.execute('UPDATE ring_devices SET site=?,camera=? WHERE account=? AND device=?', (site, camera, a['account'], device)).rowcount:
+            if not db.execute('UPDATE ring_devices SET site=?,camera=?,hardware=COALESCE(?,hardware) WHERE account=? AND device=?',
+                              (site, camera, hardware, a['account'], device)).rowcount:
                 raise HTTPException(404, 'Authorized Ring device not found')
             event(db, site, 'ring.camera_mapped', camera)
             # Pairing is the owner asking to watch this camera: select it for

@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from twinforge.fixture import synthetic_layout
 from spatialguard_api.store import Store, digest, dump, now
 from spatialguard_api.ring_service import (
-    RingService, capability_summary, configuration_summary, hardware_model,
+    RingService, capability_summary, configuration_summary,
     subscription_summary,
 )
 from spatialguard_api.ring_provider import Provider, WindowsVault
@@ -90,12 +90,11 @@ def mapped(service):
     service.mapping('owner','device-a','site_demo','camera_front')
 
 
-def test_device_hardware_uses_product_artwork_not_owner_camera_names(service):
-    assert hardware_model({'image_url': 'https://app-content.ring.com/devices/rvd_gen2_3x.png'}) == 'video_doorbell'
-    assert hardware_model({'image_url': 'https://app-content.ring.com/devices/stick_up_cam_white.png'}) == 'stick_up_cam'
-    assert hardware_model({'name': 'Doorbell'}) is None
-    assert hardware_model({'image_url': 'https://other.example/rvd_gen2_3x.png'}) is None
-    assert hardware_model({'image_url': 'https://app-content.ring.com/unknown.png'}) is None
+def test_owner_chooses_the_camera_model_ring_does_not_report(service):
+    """Ring's device resource has no type field and its docs say image_url is not a
+    contract, so the 3D model comes only from what the owner picks while pairing."""
+    from pydantic import ValidationError
+    from spatialguard_api.ring_routes import RingMapping
     original_api = service.provider.api
     def api(*args, **kwargs):
         result = original_api(*args, **kwargs)
@@ -104,10 +103,36 @@ def test_device_hardware_uses_product_artwork_not_owner_camera_names(service):
         return result
     service.provider.api = api
     mapped(service)
+    device = service.devices('owner')[0]
+    assert device['hardware_model'] is None
+    assert 'image_url' not in device
+    service.mapping('owner', 'device-a', 'site_demo', 'camera_front', 'video_doorbell')
     assert service.devices('owner')[0]['hardware_model'] == 'video_doorbell'
-    assert 'image_url' not in service.devices('owner')[0]
+    # A fresh inventory and a re-pair without a choice both keep the owner's answer.
+    service.devices('owner', True)
+    service.mapping('owner', 'device-a', 'site_demo', 'camera_front')
+    assert service.devices('owner')[0]['hardware_model'] == 'video_doorbell'
+    service.mapping('owner', 'device-a', 'site_demo', 'camera_front', 'stick_up_cam')
+    assert service.devices('owner')[0]['hardware_model'] == 'stick_up_cam'
+    service.mapping('owner', 'device-a', 'site_demo', 'camera_front', 'other')
+    assert service.devices('owner')[0]['hardware_model'] == 'other'
+    with pytest.raises(HTTPException):
+        service.mapping('owner', 'device-a', 'site_demo', 'camera_front', 'floodlight')
+    assert RingMapping(site_id='s', camera_id='c').hardware_model is None
+    with pytest.raises(ValidationError):
+        RingMapping(site_id='s', camera_id='c', hardware_model='floodlight')
     with pytest.raises(HTTPException):
         service.devices('other')
+
+
+def test_cached_artwork_guesses_are_not_shown_as_the_owner_choice(service):
+    mapped(service)
+    with service.store.connect() as db:
+        row = db.execute("SELECT data FROM ring_devices WHERE device='device-a'").fetchone()
+        data = json.loads(row['data'])
+        data['hardware_model'] = 'video_doorbell'  # written by builds that guessed from artwork
+        db.execute("UPDATE ring_devices SET data=? WHERE device='device-a'", (dump(data),))
+    assert service.devices('owner')[0]['hardware_model'] is None
 
 
 def delivery(service, kind='motion_detected', rid='request-a', eid='event-a',
@@ -619,7 +644,7 @@ def test_enabled_luna_classifier_labels_event_without_storing_snapshot(service):
             label='delivery_activity',display_label='Possible delivery',confidence='medium',
             summary='A person appears to place a parcel near the entrance.',
             visible_evidence=['Parcel-shaped object'],uncertainty='Uniform is not readable.',
-            model='gpt-5.6-luna',response_id='resp_fixture',analyzed_at='2026-09-19T00:00:00Z')
+            model='us.amazon.nova-pro-v1:0',response_id=None,analyzed_at='2026-09-19T00:00:00Z')
     assert process_one(service,engine,classify)
     with service.store.connect() as db:
         raw=db.execute('SELECT data FROM incidents').fetchone()[0]
@@ -1007,3 +1032,26 @@ def test_automatic_analysis_retries_until_the_recording_is_ready(service, monkey
     with service.store.connect() as db:
         row=db.execute('SELECT state,attempts,not_before FROM observation_tracks').fetchone()
     assert row['state']=='queued' and row['attempts']==1 and row['not_before']>time.time()+60
+
+
+def test_visitor_paths_need_the_separate_foot_traffic_consent(service, monkeypatch):
+    """Ring Appstore Content Policy 1.2.4: mapping people needs explicit consent."""
+    from spatialguard_api import tracks
+    mapped(service)
+    service.webhook(*delivery(service))
+    process_one(service, Engine())
+    with service.store.connect() as db:
+        db.execute('UPDATE observation_tracks SET not_before=0')
+        owner = db.execute('SELECT owner FROM sites').fetchone()['owner']
+        # An account that allowed Ring data but not foot-traffic analysis.
+        db.execute('INSERT OR REPLACE INTO account_preferences(owner,ring_data_consent,foot_traffic_consent) VALUES (?,1,0)', (owner,))
+        if not db.execute('SELECT 1 FROM accounts WHERE id=?', (owner,)).fetchone():
+            db.execute("INSERT INTO accounts(id,email,password_hash,created) VALUES (?,?,?,?)",
+                       (owner, 'owner@example.com', 'x', '2026-01-01T00:00:00Z'))
+    fetched = []
+    service.provider.clip = lambda *args: (fetched.append(1) or b'clip', {})
+    monkeypatch.setattr(tracks, 'MODEL', type('M', (), {'is_file': lambda self: True})())
+    assert tracks.process_one(service, service.store) is True
+    with service.store.connect() as db:
+        row = db.execute('SELECT state FROM observation_tracks').fetchone()
+    assert row['state'] == 'skipped' and not fetched

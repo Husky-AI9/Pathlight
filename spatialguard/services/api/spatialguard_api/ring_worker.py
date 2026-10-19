@@ -244,7 +244,7 @@ def process_one(service, engine, classifier=classify_images):
         # with the incident; do not invent an engine revision or spatial result.
         title = (classification.display_label if classification else
                  ('Ring doorbell pressed' if row['kind']=='button_press' else 'Ring motion reported'))
-        rule = ('Luna classified up to three chronological event snapshots; the result is an AI interpretation that requires review. '
+        rule = ('Amazon Bedrock classified up to three chronological event snapshots; the result is an AI interpretation that requires review. '
                 'Position and identity remain unknown.' if classification else
                 'Ring event from a selected camera while monitoring is enabled. Position and person identity are unknown.')
         incident = Incident(id='incident_ring_'+row['id'][:40], site_id=snapshot['site'], revision_id=snapshot['revision'],

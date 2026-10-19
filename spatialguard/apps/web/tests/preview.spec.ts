@@ -366,7 +366,7 @@ test("private day and night clips animate an approximate 2D and 3D movement trai
           : "A person is holding a parcel at the entrance.",
         visible_evidence: threat ? ["Ambiguous dark object"] : ["Parcel"],
         uncertainty: "Identity and intent are unknown.",
-        model: "gpt-5.6-luna",
+        model: "us.amazon.nova-pro-v1:0",
         response_id: "browser_fixture",
         analyzed_at: new Date().toISOString(),
       },
@@ -572,6 +572,9 @@ test("phone navigation, pairing and disconnected state", async ({
   context,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  // The "Connect Ring cameras" prompt only shows while no Ring account is linked.
+  await page.route("**/v1/ring", (route) =>
+    route.fulfill({ json: { configured: true, state: "not_connected", public_url: "https://gateway.example.test" } }));
   await openDemo(page);
   await expect(
     page.getByRole("heading", { name: "Home", exact: true }),
@@ -757,11 +760,11 @@ test("trace a floor plan into a reviewable 2D and 3D map", async ({ page }) => {
     path.resolve("tests/fixtures/plan.png"),
   );
   // Vision is opt-in and discloses the upload before it happens. This suite traces
-  // locally so it never sends the drawing anywhere or bills the OpenAI account.
+  // locally so it never sends the drawing anywhere or bills the Bedrock account.
   const useVision = dialog.getByRole("checkbox", { name: /Read room names/ });
   await expect(useVision).toBeVisible();
   if (await useVision.isEnabled())
-    await expect(dialog.getByText(/sent to OpenAI/)).toBeVisible();
+    await expect(dialog.getByText(/sent to Amazon Bedrock/)).toBeVisible();
   await useVision.uncheck();
   await expect(useVision).not.toBeChecked();
   await expect(dialog.getByText(/GPT Sol/)).toHaveCount(0);
@@ -952,7 +955,7 @@ test("setup guide explains consent, maps, and evidence on a phone", async ({ pag
   await expect(guide.getByRole("heading", { name: "Welcome to Pathlight" })).toBeVisible();
   await guide.getByRole("button", { name: "Continue" }).click();
   await expect(guide.getByText("Ring cameras", { exact: true })).toBeVisible();
-  await expect(guide.getByText(/sent to OpenAI/)).toBeVisible();
+  await expect(guide.getByText(/sent to Amazon Bedrock/)).toBeVisible();
   await guide.getByRole("button", { name: "Continue" }).click();
   await expect(guide.getByRole("heading", { name: "Add your floor plan" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -1007,7 +1010,7 @@ test("snapshot classification has no manual feature toggle", async ({ page }) =>
   await allowProviderFeatures(page);
   await page.route("**/v1/classifier", (route) =>
     route.fulfill({
-      json: { configured: true, model: "gpt-5.6-luna" },
+      json: { configured: true, model: "us.amazon.nova-pro-v1:0" },
     }),
   );
   await openDemo(page);

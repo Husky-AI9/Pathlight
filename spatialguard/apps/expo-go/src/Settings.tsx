@@ -154,7 +154,7 @@ export function Operations() {
             <View style={{ flex: 1 }}>
               <Label style={s.strong}>{d.name}</Label>
               <Label style={[s.muted, { fontSize: 13 }]}>
-                {d.uptime_percent === null ? "No history yet" : `${d.uptime_percent}% uptime`}
+                {d.uptime_percent === null ? (d.online ? "Online now" : "Offline now") : `${d.uptime_percent}% uptime`}
               </Label>
             </View>
             <Chip text={d.online ? "Online" : "Offline"} tone={d.online ? "success" : "danger"} />
@@ -168,15 +168,14 @@ export function Operations() {
           </View>
         )}
       </Card>
-      <Card>
+      {!!data.alerts.length && <Card>
         <CardHeader title="Recent status alerts" />
         {data.alerts.map((a) => (
           <Label key={a.id} style={{ fontSize: 14 }}>
             {data.devices.find((d) => d.id === a.device)?.name || "Camera"} · {a.kind} · {new Date(a.at * 1000).toLocaleString()}
           </Label>
         ))}
-        {!data.alerts.length && <Label style={s.muted}>No status changes recorded.</Label>}
-      </Card>
+      </Card>}
       {!!data.projects.length && (
         <Card>
           <CardHeader title="Time-lapse" />

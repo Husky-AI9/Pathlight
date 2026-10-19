@@ -1,5 +1,52 @@
-.venv/
-.data/
+# Pathlight repository — allow-list.
+#
+# Everything at the top level is ignored unless it is listed here, so local
+# workspace material (the TwinForge viewer and notes, Codex packets, test media,
+# virtual environments, scratch output) can never be committed by accident.
+# To add a new top-level file or folder to the repository, add a `!/name` line.
+/*
+
+# Build, CI and deployment
+!/.github/
+!/.dockerignore
+!/.gitattributes
+!/.gitignore
+!/.env.example
+!/.nvmrc
+!/.python-version
+!/Dockerfile
+!/railway.toml
+!/package.json
+!/package-lock.json
+!/pyproject.toml
+!/requirements.lock
+
+# Documentation for judges and users
+!/README.md
+!/JUDGES.md
+!/FRICTION_LOG.md
+!/LICENSE
+
+# Source
+!/packages/
+!/services/
+!/spatialguard/
+
+# Only the CC0 synthetic home layout is needed (the browser tests read it).
+!/fixtures/
+/fixtures/*
+!/fixtures/synthetic-home/
+/fixtures/synthetic-home/*
+!/fixtures/synthetic-home/layout.json
+!/fixtures/synthetic-home/README.md
+
+# Internal planning notes are not part of the product.
+/spatialguard/Ring Competition Feature must have.txt
+
+# ---------------------------------------------------------------------------
+# Inside the allowed folders
+
+# Dependencies, builds and caches
 node_modules/
 dist/
 dist-embed/
@@ -7,35 +54,48 @@ build/
 coverage/
 htmlcov/
 __pycache__/
+*.pyc
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-*.pyc
 *.egg-info/
-.env
-!.env.example
+*.tsbuildinfo
+test-results/
+playwright-report/
+.expo/
+web-build/
+
+# Local data, databases and logs
+.data/
 *.sqlite
 *.sqlite3
 *.db
 *.db-shm
 *.db-wal
 *.log
-test-results/
-playwright-report/
-*.tsbuildinfo
+
+# Secrets and provider credentials — never commit, wherever they land
+.env
+.env.*
+!.env.example
+*credentials*.csv
+*credentials*.json
+ring-app-credentials*
+**/*token*.json
+**/*secret*.json
+*BEDROCK*.txt
+*.pem
+*.key
+*.p12
 *.jks
 *.keystore
 google-services.json
-
-# Local deployment and infrastructure state.
 .railway/
 .terraform/
 .terraform.lock.hcl
 .aws/
 
-# Local media and generated Android output.
-TestRingVideo/
-test-ring-video/
+# Mobile build output
 **/android/.gradle/
 **/android/build/
 **/android/app/build/
@@ -50,33 +110,6 @@ DerivedData/
 *.aab
 *.ipa
 
-# Provider credentials must never be committed, wherever they land.
-*credentials*.csv
-*credentials*.json
-ring-app-credentials*
-**/*credentials*.csv
-**/*credentials*.json
-**/*token*.json
-**/*secret*.json
-*.pem
-*.key
-*.p12
-
-# Local provider exports and machine-specific notes.
-spatialguard/export AWS_BEARER_TOKEN_BEDROCK=ABS.txt
-
-# Keep the future public repository focused on SpatialGuard. These unrelated
-# TwinForge workspace folders remain available locally but are not included by
-# a later `git add .`; required shared code is staged explicitly above.
-/apps/
-/docs/
-/examples/
-/fixtures/
-/scripts/
-/tests/
-/Claude outputs/
-/README.md
-/AGENTS.md
-/01_TwinForge_Digital_Twin_Engine_Codex_Packet.md
-/02_SpatialGuard_Codex_Packet.md
-/03_Hackathon_Opportunity_Reference_2026.md
+# Local camera media
+TestRingVideo/
+test-ring-video/

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ApiError, request, openExternal } from "./platform";
 import RecoveryNotice from "./RecoveryNotice";
 import type { components } from "./generated";
+import { RING_HARDWARE } from "./PairCameraSheet";
 type Status = components["schemas"]["RingStatus"];
 type Device = components["schemas"]["RingDevice"];
 type Site = {
@@ -411,6 +412,28 @@ export default function RingConnection({ sites, refreshOnReturn = false }: { sit
                             </option>
                           )),
                         )}
+                      </select>
+                    </label>
+                    <label>
+                      Camera type
+                      <select
+                        aria-label={`Camera type for ${d.name}`}
+                        disabled={busy || !d.site_id || !d.camera_id}
+                        value={d.hardware_model ?? ""}
+                        onChange={(e) => {
+                          const hardware_model = e.target.value;
+                          const { site_id, camera_id } = d;
+                          if (site_id && camera_id && hardware_model)
+                            void act(async () => {
+                              await request(`/v1/ring/devices/${encodeURIComponent(d.id)}/mapping`, "PUT", { site_id, camera_id, hardware_model });
+                              await load();
+                            });
+                        }}
+                      >
+                        <option value="" disabled>{d.camera_id ? "Choose what is mounted" : "Pair it first"}</option>
+                        {RING_HARDWARE.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
                       </select>
                     </label>
                     <button

@@ -21,8 +21,9 @@ JavaScript packages, including transitive integrity hashes, are locked in
 `package-lock.json`. Android libraries are pinned in `variables.gradle` and the
 Capacitor packages are pinned in `spatialguard/apps/web/package.json`.
 
-The optional snapshot classifier defaults to `gpt-5.6-luna`. A release must set
-`SPATIALGUARD_CLASSIFIER_MODEL` explicitly if classification is enabled and must
+The optional snapshot classifier uses Amazon Bedrock and defaults to
+`us.amazon.nova-pro-v1:0`. A release must set `PATHLIGHT_CLASSIFIER_MODEL`
+explicitly if classification is enabled and must
 record the configured value with its deployment evidence. Classification is
 disabled by default in the certification profile.
 

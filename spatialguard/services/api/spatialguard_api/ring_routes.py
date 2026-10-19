@@ -30,6 +30,9 @@ class RingStatus(Model):
 class RingMapping(Model):
     site_id: str
     camera_id: str
+    # What the owner says is mounted here. Ring exposes no device type, so this is
+    # the owner's choice; omitted keeps the earlier choice.
+    hardware_model: Literal['video_doorbell', 'stick_up_cam', 'other'] | None = None
 
 
 class RingDevice(Model):
@@ -40,7 +43,8 @@ class RingDevice(Model):
     checked_at: str
     site_id: str | None
     camera_id: str | None
-    hardware_model: Literal['video_doorbell', 'stick_up_cam'] | None = None
+    # Chosen by the owner while pairing (Ring reports no device type); None = not chosen yet.
+    hardware_model: Literal['video_doorbell', 'stick_up_cam', 'other'] | None = None
     support: dict[str, bool] = Field(default_factory=dict)
     configuration: dict = Field(default_factory=dict)
     guidance: list[str] = Field(default_factory=list)
@@ -95,6 +99,11 @@ def install(app, store, principal, service=None):
             raise HTTPException(409, 'Allow Ring data in Privacy settings first')
         return preferences
 
+    def require_foot_traffic_consent(owner):
+        preferences = require_ring_consent(owner)
+        if not preferences['foot_traffic_consent']:
+            raise HTTPException(409, 'Turn on foot-traffic analysis in Privacy settings first')
+
     def require_classification_consent(owner):
         preferences = require_ring_consent(owner)
         if not preferences['classification_consent']:
@@ -133,6 +142,8 @@ def install(app, store, principal, service=None):
         if not flags['uptime_history']:
             for device in result.get('devices', []):
                 device['history'] = []
+                if 'uptime_percent' in device:
+                    device['uptime_percent'] = None
         if not flags['offline_alerts']:
             result['alerts'] = []
         if not flags['timelapse']:
@@ -191,7 +202,7 @@ def install(app, store, principal, service=None):
     @app.put('/v1/ring/devices/{device}/mapping', status_code=204)
     def mapping(device: str, body: RingMapping, p=Depends(principal)):
         require_ring_consent(p['owner'])
-        ring.mapping(p['owner'], device, body.site_id, body.camera_id)
+        ring.mapping(p['owner'], device, body.site_id, body.camera_id, body.hardware_model)
 
     @app.get(
         '/v1/ring/sites/{site}/cameras/{camera}/snapshot',
@@ -230,8 +241,7 @@ def install(app, store, principal, service=None):
         server analyzes the same authorized recording it serves for playback.
         A path already found by automatic analysis is returned straight away.
         """
-        require_feature('classification')
-        require_ring_consent(p['owner'])
+        require_foot_traffic_consent(p['owner'])
         response.headers['Cache-Control'] = 'private, no-store'
         from . import tracks
         if clip_digest is None:
@@ -282,7 +292,7 @@ def install(app, store, principal, service=None):
             raise HTTPException(503, str(exc)) from None
         updated = incident.model_copy(update={
             'title': classification.display_label,
-            'rule': ('Luna classified up to three chronological event snapshots; the result is an AI interpretation '
+            'rule': ('Amazon Bedrock classified up to three chronological event snapshots; the result is an AI interpretation '
                      'that requires review. Position and identity remain unknown.'),
             'classification_status': 'completed',
             'classification': classification,

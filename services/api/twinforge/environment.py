@@ -9,5 +9,5 @@ def load_environment(path=None):
         return
     for line in path.read_text(encoding="utf-8").splitlines():
         key, separator, value = line.strip().partition("=")
-        if separator and key in {"OPENAI_API_KEY", "TWINFORGE_VISION_MODEL"}:
+        if separator and key in {"AWS_BEARER_TOKEN_BEDROCK", "AWS_REGION", "TWINFORGE_BEDROCK_MODEL"}:
             os.environ[key] = value.strip().strip("\"'")

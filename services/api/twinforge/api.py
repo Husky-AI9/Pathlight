@@ -294,7 +294,7 @@ def create_app(db_path=None):
 
     @app.get("/v1/generation-options")
     def generation_options(p=Depends(principal)):
-        return {"vision_available": bool(os.environ.get("OPENAI_API_KEY", "").strip())}
+        return {"vision_available": bool(os.environ.get("AWS_BEARER_TOKEN_BEDROCK", "").strip())}
 
     @app.get("/v1/sites")
     def sites(p=Depends(principal)):
