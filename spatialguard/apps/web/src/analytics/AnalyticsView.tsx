@@ -12,6 +12,7 @@ import { Building2, Clock3, DoorOpen, Info, Minus, RefreshCw, Sparkles, Trending
 import type { components } from "../generated";
 import { ACCENT, BusyGrid, ChartCard, DailyCompare, HourlyColumns, PREVIOUS, RankedBars, hourLabel } from "./charts";
 import AlertsCard, { type AlertSettingsInput, type CrowdAlerts } from "./AlertsCard";
+import ActionsCard from "./ActionsCard";
 import "./analytics.css";
 
 export type SiteAnalytics = components["schemas"]["SiteAnalytics"];
@@ -221,6 +222,8 @@ export default function AnalyticsView(props: AnalyticsViewProps) {
               <Delta now={totals.avg_visit_s} before={totals.avg_visit_previous_s} />
             </article>
           </div>
+
+          <ActionsCard data={data} alerts={props.alerts} />
 
           <InsightCard insight={props.insight} busy={props.insightBusy} error={props.insightError}
             onInsight={props.onInsight} visits={totals.visits} />

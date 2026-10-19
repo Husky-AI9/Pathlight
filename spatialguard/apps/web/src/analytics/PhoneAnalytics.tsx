@@ -12,6 +12,7 @@ import { useState } from "react";
 import { Sparkles, TrendingDown, TrendingUp, Minus, Info, RefreshCw } from "lucide-react";
 import { ModeSwitch, simulatedNote, type AnalyticsViewProps } from "./AnalyticsView";
 import AlertsCard from "./AlertsCard";
+import ActionsCard from "./ActionsCard";
 import "./phone.css";
 
 type Tab = "when" | "where" | "arrivals" | "accuracy";
@@ -377,6 +378,7 @@ export default function PhoneAnalytics(props: PhoneAnalyticsProps) {
             {totals.visits > 0 && totals.visits < 10 && <span className="pa-sample">Small sample, patterns will change</span>}
           </div>
         </section>
+        <ActionsCard data={data} alerts={props.alerts} className="pa-card" />
         {tabs}
         <section className="pa-card pa-chart" role="tabpanel" aria-label={TABS.find(([id]) => id === tab)![1]}>
           {tab === "when" ? when() : tab === "where" ? where() : tab === "arrivals" ? arrivals() : accuracy()}

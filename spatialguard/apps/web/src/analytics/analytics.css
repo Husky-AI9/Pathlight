@@ -206,3 +206,19 @@
 @media (max-width: 760px) {
   .an-alerts-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Today's actions ------------------------------------------------------------------ */
+.an-actions { display: grid; gap: 10px; }
+.an-actions-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.an-actions-head h3 { margin: 0; font-size: 16px; }
+.an-actions-head span { color: var(--muted, #5b607f); font-size: 12px; }
+.an-actions-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.an-actions-list li { display: flex; gap: 10px; align-items: flex-start; padding: 11px 12px; border: 1px solid #e6e3fb;
+  border-radius: 12px; background: #faf9ff; }
+.an-actions-icon { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  background: #e8e4fd; color: #3f35c9; }
+.an-actions-text { display: grid; gap: 3px; min-width: 0; }
+.an-actions-text strong { font-size: 14px; color: var(--ink, #1d2033); }
+.an-actions-text small { color: #4b5070; font-size: 13px; line-height: 1.45; }
+.an-actions-empty { margin: 0; color: #4b5070; font-size: 14px; }
+.an-actions-foot { margin: 0; color: var(--muted, #5b607f); font-size: 12px; }

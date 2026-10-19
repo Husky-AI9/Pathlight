@@ -166,6 +166,10 @@ test("Site Analytics shows visits, hours, zones and entrances with table views",
   await zones.getByRole("button", { name: "Table" }).click();
   await expect(zones.getByRole("columnheader", { name: "Avg. time" })).toBeVisible();
   await expect(page.getByText(/Weekly insight/)).toBeVisible();
+  // Today's actions always renders: suggestions, or a note that the week is too thin.
+  const actions = page.locator("section.an-actions");
+  await expect(actions.getByRole("heading", { name: /Today.s actions/ })).toBeVisible();
+  await expect(actions.getByText(/Rule-based from visit counts/)).toBeVisible();
 });
 
 test("home keeps CCTV and incidents in one right rail beside a full green 2D map", async ({ page }) => {
