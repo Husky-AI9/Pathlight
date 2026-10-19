@@ -1202,10 +1202,24 @@ def create_app(db_path=None, engine=None, ring_service=None):
 
     @app.get("/v1/sites/{site_id}/incidents", response_model=m.IncidentPage)
     def incidents(site_id: str, before: int | None = Query(None, ge=1), p=Depends(principal)):
+        """Visits newest first by when they started, 30 a page.
+
+        ``before`` is the cursor from the previous page. Ordering by start time,
+        not by insertion, keeps a real Ring visit in place when demo history
+        is regenerated after it.
+        """
+        offset = before or 0
         with store.connect() as db:
             owned(db, site_id, p)
-            rows = db.execute("SELECT seq,data FROM incidents WHERE site_id=? AND seq<? ORDER BY seq DESC LIMIT 31", (site_id, before or 9223372036854775807)).fetchall()
-            return m.IncidentPage(incidents=[json.loads(r["data"]) for r in rows[:30]], next_cursor=rows[29]["seq"] if len(rows)>30 else None)
+            rows = db.execute(
+                "SELECT seq,data FROM incidents WHERE site_id=? "
+                # Fixture replays carry fixed sample times, so they sort by when they ran.
+                "ORDER BY replace(CASE WHEN json_extract(data,'$.evidence_mode')='replay' AND run_id NOT LIKE 'demo-sim-%' "
+                "THEN json_extract(data,'$.created_at') ELSE json_extract(data,'$.started_at') END,'Z','+00:00') DESC, "
+                "seq DESC LIMIT 31 OFFSET ?",
+                (site_id, offset)).fetchall()
+            return m.IncidentPage(incidents=[json.loads(r["data"]) for r in rows[:30]],
+                                  next_cursor=offset + 30 if len(rows) > 30 else None)
 
     @app.get("/v1/sites/{site_id}/heatmap", response_model=m.Heatmap)
     def heatmap(site_id: str, window: str = Query("24h", pattern="^(1h|12h|24h)$"),
