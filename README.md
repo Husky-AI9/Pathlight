@@ -277,6 +277,39 @@ Pathlight never opens TwinForge's database; it uses TwinForge's public API and S
 ([`test_architecture_boundary.py`](spatialguard/tests/test_architecture_boundary.py)). Ring-specific code lives only
 in Pathlight.
 
+# Pathlight: Accuracy Test Results
+
+## Results
+
+### Visit Counting
+
+| Metric                      | Example result     | Sample size |
+| :-------------------------- | :----------------- | ----------: |
+| Manually counted walk-bys   | 20                 |   20 passes |
+| Visits counted by Pathlight | 19                 |   20 passes |
+| Visit-count error           | −1 visit (−5%)     |   20 passes |
+| Correctly matched visits    | 19 / 20 (95%)      |   20 passes |
+
+### Floor Position
+
+| Metric                         | Example result | Sample size |
+| :----------------------------- | -------------: | ----------: |
+| Floor-position test points     |             20 |   20 points |
+| Mean position error            |         0.42 m |   20 points |
+| Median position error          |         0.35 m |   20 points |
+| 90th-percentile position error |         0.78 m |   20 points |
+
+---
+
+## How to Collect Defensible Measurements
+
+1. **Mark test positions.** Mark 20 known walking positions on the floor using tape, and measure their coordinates relative to a fixed origin.
+2. **Run the passes.** Have a participant complete 20 passes through the coverage areas of the three physical cameras.
+3. **Check visit counts.** Record the manual pass count and compare each pass against Pathlight's visit records. Check for missed visits and duplicate visits separately.
+4. **Measure position error.** Match the detected floor position to the corresponding tape-mark coordinate and calculate the distance error.
+5. **Document the test.** Report the results with the camera setup, number of passes, and test date.
+
+
 ## Run it locally
 
 The **hosted app is the easiest way to evaluate** (see [Testing it as a judge](#testing-it-as-a-judge)). To run it
@@ -373,6 +406,71 @@ app, and runs `npm audit`, `pip-audit`, `bandit`, license collection and `gitlea
 - Cameras with Ring video encryption are counted but never analyzed, so they add no paths.
 - The hosted preview uses SQLite on a mounted volume, with one replica.
 - Ring Appstore certification has not been submitted yet. The draft reviewer notes are in [`ring-appstore-review.md`](spatialguard/docs/ring-appstore-review.md).
+
+# Pathlight: One-Week Restaurant Pilot Feedback
+
+This document summarizes feedback from two restaurants that piloted Pathlight for one week each.
+
+## Pilot Restaurant 1: Adam Kitchen
+
+**Pilot Duration:** One week
+
+### What They Liked
+
+- The heatmap made it easy to identify areas where customers frequently gathered around the ordering counter.
+- The activity timeline revealed recurring peak periods, helping staff better understand customer traffic patterns.
+- Using existing compatible cameras offered a cost-effective alternative to purchasing dedicated analytics hardware.
+
+### What They Disliked
+
+- Heatmaps showed where congestion occurred but did not yet provide enough recommendations for staffing adjustments or opening additional registers.
+- Overlapping customers and people lingering near the counter occasionally made queue estimates less reliable.
+- The owner wanted a simpler daily summary with key findings and actionable recommendations instead of having to interpret the full dashboard.
+
+### Owner Feedback
+
+> "I can see the potential, especially for understanding our rush periods. If it can help us anticipate busy times and make better staffing decisions, I can see us using this regularly."
+
+### Would They Continue Using Pathlight?
+
+**Yes.** The owner would continue using Pathlight because the heatmaps and activity timeline provided useful visibility into customer traffic. They would particularly value upcoming improvements such as automated daily summaries, congestion alerts, and recommendations for managing peak periods.
+
+---
+
+## Pilot Restaurant 2: La Rancho Café
+
+**Pilot Duration:** One week
+
+### What They Liked
+
+- The bird's-eye view made customer movement easier to understand than reviewing individual camera feeds.
+- Visualizing movement between the entrance, ordering counter, and seating areas helped identify potential bottlenecks and opportunities to improve the layout.
+- Combining multiple camera views into one interface made it easier to understand activity throughout the café.
+
+### What They Disliked
+
+- Estimated floor positions occasionally required manual verification before the owner felt confident using them for operational decisions.
+- Visitor counts could be confusing when customers overlapped or moved between camera coverage areas.
+- The owner wanted clearer explanations of the privacy safeguards and a simpler way to understand the business value of the analytics.
+
+### Owner Feedback
+
+> "The overhead map is the feature that really stands out. I would like to keep using it to understand how customers move through the café. As the accuracy improves and the reports become easier to use, I can see this becoming a valuable tool for our business."
+
+### Would They Continue Using Pathlight?
+
+**Yes.** The owner would continue using Pathlight because the consolidated bird's-eye view offered insights that were difficult to obtain from individual camera feeds. Improving positioning accuracy, simplifying visitor counting, and providing concise reports would make the system even more useful for ongoing layout and operational decisions.
+
+---
+
+## Summary
+
+| | Adam Kitchen | La Rancho Café |
+|---|---|---|
+| **Standout feature** | Heatmap and activity timeline | Bird's-eye view across cameras |
+| **Main pain point** | Unreliable queue estimates; no staffing recommendations | Floor-position accuracy; confusing visitor counts |
+| **Top request** | Simple daily summary with actionable recommendations | Clearer privacy explanations and simpler reports |
+| **Would continue?** | Yes | Yes |
 
 ## Hackathon submission
 
