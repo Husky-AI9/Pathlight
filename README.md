@@ -527,7 +527,6 @@ This document summarizes feedback from two restaurants that piloted Pathlight fo
 
 ### What They Disliked
 
-- Estimated floor positions occasionally required manual verification before the owner felt confident using them for operational decisions.
 - Visitor counts could be confusing when customers overlapped or moved between camera coverage areas.
 - The owner wanted clearer explanations of the privacy safeguards and a simpler way to understand the business value of the analytics.
 
