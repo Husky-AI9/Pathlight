@@ -2,16 +2,17 @@
 
 # Pathlight
 
-**Foot-traffic analytics for the Ring cameras you already own.**
+**Know when the counter queue is losing you sales, with the Ring cameras you already own.**
 
-Pathlight adds business analytics to Ring cameras, turning them into a competitive system for small and large
-businesses alike. It maps Ring camera activity onto your own floor plan, so a café, shop, clinic or office sees where
-visitors go, which areas are busiest, when the rush starts and how long people stay, without new cameras, an
-installer or calibration.
+Maya runs a café with Ring cameras over the door and the counter. At lunch the queue at the counter backs up toward the door, and some people
+leave before they order. Her cameras record it, but they can't tell her it's happening, how often, or whether moving
+the pastry display helped. Pathlight can. It puts every Ring visit on her floor plan, alerts her when the counter
+queue passes her limit, tells her when to open a second register, and shows whether a layout change shortened the
+wait. No new cameras, installer or calibration.
 
 [![Demo video on YouTube](https://img.shields.io/badge/demo-watch%20on%20YouTube-FF0000?logo=youtube&logoColor=white)](https://youtu.be/VIDEO_ID) [![Pathlight checks](https://github.com/Husky-AI9/SpatialGuard/actions/workflows/spatialguard-ci.yml/badge.svg)](https://github.com/Husky-AI9/SpatialGuard/actions/workflows/spatialguard-ci.yml) [![app: live on Railway](https://img.shields.io/badge/app-live%20on%20Railway-161616)](https://pathlight.up.railway.app) [![Ring data: real · 3 cameras](https://img.shields.io/badge/Ring%20data-real%20%C2%B7%203%20cameras-161616)](#real-ring-data-from-real-cameras) [![runs on: web · Android](https://img.shields.io/badge/runs%20on-web%20%C2%B7%20Android-161616)](#run-it-locally) [![AI: Amazon Bedrock · Nova Pro](https://img.shields.io/badge/AI-Amazon%20Bedrock%20%C2%B7%20Nova%20Pro-161616)](#how-its-built-on-aws) [![tests: 177 backend · 48 browser](https://img.shields.io/badge/tests-177%20backend%20%C2%B7%2048%20browser-161616)](#tests-and-ci) [![friction log: 13 entries](https://img.shields.io/badge/friction%20log-13%20entries-161616)](FRICTION_LOG.md) [![license: MIT](https://img.shields.io/badge/license-MIT-161616)](LICENSE)
 
-[**Live app**](https://pathlight.up.railway.app) · [Test it as a judge](#testing-it-as-a-judge) · [Real Ring data](#real-ring-data-from-real-cameras) · [How it uses Ring](#how-it-uses-ring) · [Architecture](#how-its-built-on-aws) · [Run it locally](#run-it-locally) · [Submission checklist](#hackathon-submission)
+[**Live app**](https://pathlight.up.railway.app) · [Test it as a judge](#testing-it-as-a-judge) · [Real Ring data](#real-ring-data-from-real-cameras) · [How it uses Ring](#how-it-uses-ring) · [Privacy](#privacy-ring-terms-and-human-control) · [Architecture](#how-its-built-on-aws) · [Run it locally](#run-it-locally) · [Submission checklist](#hackathon-submission)
 
 ### [▶ Watch the demo video](https://youtu.be/VIDEO_ID)
 
@@ -56,10 +57,55 @@ The judge account opens **Demo café**, a real coffee-shop floor plan (CC0) turn
 recording" clears after a minute. "AI insights aren't set up on this server" means the Bedrock key is missing on the
 deployment. `/health` and `/status` on the hosted URL show whether the service is up.
 
+## The problem: Maya's lunch rush
+
+**Who:** Maya owns a small café with Ring cameras over the front door and the counter (the demo café adds one on
+the parking lot). She is the owner in our demo video. The demo café's customers are simulated, apart from the
+**Live** visits from the real Ring cameras.
+
+**The moment:** Tuesday, 12:10. The line at the counter reaches the door. People glance at it and walk back out.
+That's common: in a Bluedot survey of 1,576 U.S. adults, 77% said they will leave or consider leaving a restaurant
+if they see a long line
+([Nation's Restaurant News, 2021](https://www.nrn.com/family-dining/pandemic-intensifies-restaurant-wait-time-concerns-bluedot-survey-finds)).
+
+**The cost:** if 6 people a day walk out of a $7 order, that's about $42 a day, or roughly $1,300 a month
+(6 × $7 × 30 = $1,260). *These are example figures to show the stakes, not measurements.*
+
+**Why her cameras can't help today:** Ring tells her what happened at the door. It can't tell her where people
+wait, how long the queue gets or when it peaks, unless she buys a separate analytics camera system and pays for an
+installer and calibration.
+
+**What Pathlight does with the same two cameras:**
+
+1. **It notices.** Each Ring motion event becomes a visit on her floor plan. When the counter zone passes her limit,
+   Pathlight shows *Queue building at Counter* in the app.
+2. **It says what to do.** **Today's actions** turns the week's numbers into plain advice, such as *Shorten the wait
+   at Counter: open a second register around 12 PM*, and names the figures it comes from.
+3. **She makes a change.** She moves the pastry display so people stop browsing in the line.
+4. **It shows whether it worked.** The layout-change card compares the week before the change with the days since,
+   for each area of the café. In the demo's simulated weeks, the average counter wait drops by 15%.
+
+Most camera analytics count motion at the door. Pathlight places each visit on the owner's own floor plan, and that
+is what makes a counter queue zone and a before-and-after layout test possible.
+
+**The rest of what Pathlight adds to Ring:**
+
+| What a business needs | What Pathlight adds to Ring |
+| --- | --- |
+| See where people go | A people heatmap on the business's own floor plan, in 2D and 3D |
+| Staff for the rush | Visits by hour, a busy-times grid and visits per day against last week |
+| Keep queues short | Queue and crowding alerts per zone, live in the app |
+| Test a change | The week before a floor-plan change vs. the days since, by area |
+| Count the parking lot | Ring Smart Alerts `vehicle` events, by hour, kept apart from visits |
+| Run more than one place | Several sites per account, each with its own twin, cameras and analytics |
+| Understand the week | A plain-English note from Amazon Bedrock, with every figure checked |
+
+Positions are estimates from where each camera hangs, and Pathlight labels them that way.
+
 ## At a glance
 
-- **New business features for Ring:** floor-plan heatmaps, several locations in one view, parking-lot counts and
-  layout testing, from a single café to a business with many sites ([why it matters](#the-problem)).
+- **One owner, one costly moment:** a café's lunch queue. Pathlight raises a queue alert, says when to open a
+  second register, and shows whether a layout change helped ([Maya's lunch rush](#the-problem-mayas-lunch-rush)).
 - **Demo video:** [watch it on YouTube](https://youtu.be/VIDEO_ID): a real walk past two physical Ring cameras becomes
   one visit on the café's floor plan, then the heatmap, analytics and a weekly note from Amazon Bedrock.
 - **Live app, nothing to install:** [pathlight.up.railway.app](https://pathlight.up.railway.app). The judge sign-in
@@ -69,8 +115,9 @@ deployment. `/health` and `/status` on the hosted URL show whether the service i
   server ([see it](#real-ring-data-from-real-cameras)).
 - **No calibration:** the owner drops each camera on the plan, aims it and says what it is. Positions come from
   published single-view geometry and are always shown as estimates ([the method](#the-innovation-positions-without-calibration)).
-- **Private by design:** paths are anonymous floor points, recordings are deleted after analysis, and Bedrock only
-  ever sees aggregate counts.
+- **Private by design, owner in control:** paths are anonymous floor points, recordings are deleted after analysis,
+  Bedrock only ever sees aggregate counts, and nothing acts on its own
+  ([privacy and Ring terms](#privacy-ring-terms-and-human-control)).
 
 | Try it | |
 | --- | --- |
@@ -78,29 +125,6 @@ deployment. `/health` and `/status` on the hosted URL show whether the service i
 | **Judge sign-in** | Email and password in the Devpost **testing instructions** field |
 | **Android** | Capacitor app built in CI from [`spatialguard/apps/web/`](spatialguard/apps/web/) |
 | **Step-by-step testing** | [Testing it as a judge](#testing-it-as-a-judge), at the top of this page |
-
-## The problem
-
-Ring cameras are everywhere, in homes and in businesses, but they answer one question: "what happened at the door?"
-A business owner asks different ones every day: where do customers go, when does the rush start, is the queue at the
-counter costing sales, and did moving that display help? Today, answering those means buying a separate analytics
-camera system, an installer and calibration.
-
-**Pathlight adds that layer to Ring.** Through the Ring Partner API, the Ring cameras a business already owns become a
-foot-traffic analytics system:
-
-| What a business needs | What Pathlight adds to Ring |
-| --- | --- |
-| See where people go | A people heatmap on the business's own floor plan, in 2D and 3D |
-| Staff for the rush | Visits by hour, a busy-times grid and visits per day against last week |
-| Keep queues short | Queue and crowding alerts per zone, by email and in the app |
-| Test a change | The week before a floor-plan change vs. the days since, by area |
-| Count the parking lot | Ring Smart Alerts `vehicle` events, by hour, kept apart from visits |
-| Run more than one place | Several sites per account, each with its own twin, cameras and analytics |
-| Understand the week | A plain-English note from Amazon Bedrock, with every figure checked |
-
-It works for a single café with two cameras and grows to a business with many locations, without new hardware or
-calibration. Positions are estimates from where each camera hangs, and Pathlight labels them that way.
 
 ## Real Ring data from real cameras
 
@@ -180,8 +204,8 @@ and says nothing about who the visitors are, then marks the note **Checked**.
 <img src="docs/images/readme/queue-alert.jpg" align="left" width="48%" alt="Alert: Queue building at Counter, 3 people in the last 5 minutes, simulated.">
 
 #### Queue alerts
-Zones named like "Counter" or "Checkout" have a limit. When the queue passes it, the owner gets an alert in the app
-and by email (Amazon SES).
+Zones named like "Counter" or "Checkout" have a limit that the owner sets. When the queue passes it, an alert appears
+live in the app and in Site Analytics.
 
 <br clear="left">
 
@@ -247,6 +271,55 @@ Verified with real hardware: account linking, inventory, a snapshot, a 1280×720
 webhooks, and a motion event whose recording was analyzed into a 77-point path. How Pathlight meets Ring's Computer
 Vision Guidelines is in [`ring-cv-guidelines.md`](spatialguard/docs/ring-cv-guidelines.md).
 
+## Privacy, Ring terms and human control
+
+Pathlight looks at people on camera, so here is exactly what it keeps, what it never does, and where the owner
+decides.
+
+**What it stores**
+
+- For each visit: anonymous floor points with times and zones. No faces, no clothing or colour, no identity, and no
+  link between visits, places or accounts.
+- Vehicle counts by hour, queue and crowding alerts, and the weekly note.
+- Recordings are written to scratch space only while the person detector runs, then deleted.
+- Everything follows the owner's retention setting. Deleting a visit, a place or the account removes its visits,
+  paths, analytics, alerts and insights. **Disconnect Ring** stops all Ring processing.
+
+**What it never does**
+
+- Recognise faces or identify anyone.
+- Follow a person from one visit, day or place to the next.
+- Send images to Amazon Bedrock for the weekly note. The model sees only aggregate counts, and its text is checked
+  against the data before anyone sees it.
+- Act on its own. Alerts and **Today's actions** are suggestions for the owner. Nothing changes staffing, contacts
+  anyone or controls a device. Pathlight is not a security or life-safety system.
+
+**Where the owner decides**
+
+- **Foot-traffic analysis** is a separate permission and is off by default. Until the owner turns it on, no
+  recording is downloaded for analysis.
+- The owner sets each zone's queue or crowding limit and the time window, or turns alerts off. Queue alerts appear
+  in the app, not by email or text, and a zone doesn't alert again while an alert from the last 15 minutes is still
+  unacknowledged.
+- Email is opt-in. The only alert emails are camera offline/recovered notices, sent to an address the owner enters.
+- Cameras with Ring video encryption are counted but never analyzed.
+
+**Ring's terms**
+
+- Pathlight uses the official Ring Partner API with the owner's authorization, through Ring's one-way account
+  linking. Ring tokens stay on the server, encrypted, and never reach the browser or the Android app.
+- Ring's Content Policy 1.2.4 doesn't allow collecting, mapping or deriving personal data about people on video
+  without explicit consent. Pathlight's approach: the owner opts in, paths are anonymous floor points, recordings
+  are deleted after analysis, and onboarding asks the owner to tell visitors that cameras are in use.
+- How Pathlight meets each of Ring's Computer Vision Guidelines is mapped, with code and tests, in
+  [`ring-cv-guidelines.md`](spatialguard/docs/ring-cv-guidelines.md).
+- **Status:** this preview runs as a private Ring app. It has not yet been submitted for Ring Appstore
+  certification, and asking Ring to confirm the foot-traffic use case in writing is part of that plan
+  ([`ring-appstore-review.md`](spatialguard/docs/ring-appstore-review.md)).
+
+**What an owner should do:** put up a notice that cameras are in use, as onboarding asks, and follow local rules on
+recording and notice. Pathlight is offered in the US only.
+
 ## How it's built on AWS
 
 | Piece | AWS service | Code |
@@ -254,7 +327,7 @@ Vision Guidelines is in [`ring-cv-guidelines.md`](spatialguard/docs/ring-cv-guid
 | Weekly site insight, from aggregate numbers only | **Amazon Bedrock**, Converse API, Amazon Nova Pro (`us.amazon.nova-pro-v1:0`) | `spatialguard_api/insights.py` |
 | Floor-plan vision: rooms and doors as JSON, validated by TwinForge | **Amazon Bedrock**, Nova Pro (multimodal) | `services/api/twinforge/vision_plan.py` |
 | Optional cautious activity labels for opted-in snapshots | **Amazon Bedrock**, Nova Pro | `spatialguard_api/classifier.py` |
-| Account verification, password reset and alert email | **Amazon SES** (v2 API via boto3; Railway Hobby blocks SMTP) | `spatialguard_api/mail.py` |
+| Account verification, password reset and opt-in camera offline/recovered email | **Amazon SES** (v2 API via boto3; Railway Hobby blocks SMTP) | `spatialguard_api/mail.py` |
 
 Bedrock is called over HTTPS with a Bedrock API key (`AWS_BEARER_TOKEN_BEDROCK`) from the Railway-hosted server. If
 it isn't configured, each feature says so in the app rather than failing silently.
