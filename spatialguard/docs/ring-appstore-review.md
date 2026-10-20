@@ -2,8 +2,7 @@
 
 **Prepared:** October 1, 2026 · **Product:** Pathlight · **Hosted at:** https://pathlight.up.railway.app
 
-This page is the practical companion to `10-10-ring-appstore-and-hackathon-checklist.md`.
-It covers what the code now does for review, the Railway settings for the build Ring
+This page covers what the code now does for review, the Railway settings for the build Ring
 reviews, ready-to-paste reviewer notes, draft listing text, and the steps only the owner
 can take in the Ring Developer Portal.
 

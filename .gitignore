@@ -1,8 +1,9 @@
 # Pathlight repository — allow-list.
 #
 # Everything at the top level is ignored unless it is listed here, so local
-# workspace material (the TwinForge viewer and notes, Codex packets, test media,
-# virtual environments, scratch output) can never be committed by accident.
+# workspace material (the TwinForge viewer and notes, Codex packets, demo video
+# work in Video/, test media, archive/, virtual environments, scratch output) can
+# never be committed by accident.
 # To add a new top-level file or folder to the repository, add a `!/name` line.
 /*
 
@@ -22,11 +23,18 @@
 !/pyproject.toml
 !/requirements.lock
 
-# Documentation for judges and users
+# Documentation for judges and users (the judge path now lives in the README)
 !/README.md
-!/JUDGES.md
 !/FRICTION_LOG.md
 !/LICENSE
+
+# Only the README's images are published from docs/; the rest of docs/ is old
+# TwinForge material kept locally.
+!/docs/
+/docs/*
+!/docs/images/
+/docs/images/*
+!/docs/images/readme/
 
 # Source
 !/packages/
@@ -41,8 +49,11 @@
 !/fixtures/synthetic-home/layout.json
 !/fixtures/synthetic-home/README.md
 
-# Internal planning notes are not part of the product.
+# Internal planning notes are not part of the product. They were moved to the
+# local archive/ folder; these lines stop them coming back.
 /spatialguard/Ring Competition Feature must have.txt
+/spatialguard/REPOSITORY_SCOPE.md
+/spatialguard/docs/10-10-ring-appstore-and-hackathon-checklist.md
 
 # ---------------------------------------------------------------------------
 # Inside the allowed folders
@@ -114,3 +125,41 @@ DerivedData/
 # Local camera media
 TestRingVideo/
 test-ring-video/
+
+# Demo video work stays local: raw footage, screen recordings, edits, renders,
+# voiceover and subtitles. (The README's GIF and stills in docs/images/readme/
+# are committed.)
+Video/
+*.mov
+*.MOV
+*.mp4
+*.MP4
+*.m4v
+*.mkv
+*.webm
+*.wav
+*.mp3
+*.m4a
+*.srt
+
+# Design exports, deploy bundles and archives
+*.zip
+*.tgz
+*.7z
+
+# Notes kept locally, not published (judge maintainer checklist, design mockups,
+# planning checklists, agent instructions)
+archive/
+AGENTS.md
+CLAUDE.md
+.claude/
+.codex/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*~
