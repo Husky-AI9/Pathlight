@@ -1202,12 +1202,11 @@ def create_app(db_path=None, engine=None, ring_service=None):
 
     @app.get("/v1/sites/{site_id}/incidents", response_model=m.IncidentPage)
     def incidents(site_id: str, before: int | None = Query(None, ge=1), p=Depends(principal)):
-        """Visits newest first by when they started, 30 a page.
-
-        ``before`` is the cursor from the previous page. Ordering by start time,
-        not by insertion, keeps a real Ring visit in place when demo history
-        is regenerated after it.
-        """
+        # Visits newest first by when they started, 30 a page. `before` is the
+        # cursor from the previous page. Ordering by start time, not by insertion,
+        # keeps a real Ring visit in place when demo history is regenerated after
+        # it. (A comment, not a docstring: FastAPI would publish a docstring in
+        # the OpenAPI contract, and CI checks the contract for drift.)
         offset = before or 0
         with store.connect() as db:
             owned(db, site_id, p)
