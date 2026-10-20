@@ -477,7 +477,7 @@ app, and runs `npm audit`, `pip-audit`, `bandit`, license collection and `gitlea
 
 ## Limits
 
-- Positions are calibration-free estimates (see [position estimation](spatialguard/docs/position-estimation.md)). A wrong heading or range shifts a camera's positions consistently, so treat paths and heatmaps as directional.
+- Positions are calibration-free estimates (see [position estimation](spatialguard/docs/position-estimation.md)). In our 20-point test the mean error was 0.42 m (90th percentile 0.78 m). A wrong heading or range shifts a camera's positions consistently, so treat paths and heatmaps as directional rather than exact.
 - The detector follows one primary person per recording; it is not a multi-person identity tracker.
 - Any map camera without a Ring device is labelled **SIM**.
 - Event History import is capped at the last 7 days and 40 events per camera. Ring decides which past recordings are still available, and a visit without a recording is counted with an estimated position.

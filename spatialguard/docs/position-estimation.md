@@ -37,7 +37,7 @@ Code: `spatialguard/services/api/spatialguard_api/person_tracking.py`, `tracks.p
 - **Bias, not just noise.** A wrong heading, mounting height or range moves every position from that camera the same way. A wider footprint shows uncertainty; it doesn't remove bias. Calibrated systems avoid this.
 - **Wide angle and steep tilt** are where ground-plane approximations are weakest [1]. Ring doorbells are both.
 - **A constant footprint.** The heatmap currently uses one footprint width for walked paths. The literature [6] suggests widening it with distance from the camera; that is a planned improvement.
-- **Directional, not survey-grade.** Use Pathlight for "where do people go and wait", not for distances accurate to the centimetre. Validation on real visits (hand counts against detected visits and zones) is reported separately when available.
+- **Directional, not survey-grade.** Use Pathlight for "where do people go and wait", not for distances accurate to the centimetre. Validation on real visits: in a 20-pass test with the three physical cameras, Pathlight counted 19 of 20 walk-bys, with a mean floor-position error of 0.42 m (median 0.35 m, 90th percentile 0.78 m). See [Accuracy test results](../../README.md#pathlight-accuracy-test-results).
 
 ## References
 
