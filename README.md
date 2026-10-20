@@ -374,15 +374,6 @@ in Pathlight.
 
 ---
 
-## How to Collect Defensible Measurements
-
-1. **Mark test positions.** Mark 20 known walking positions on the floor using tape, and measure their coordinates relative to a fixed origin.
-2. **Run the passes.** Have a participant complete 20 passes through the coverage areas of the three physical cameras.
-3. **Check visit counts.** Record the manual pass count and compare each pass against Pathlight's visit records. Check for missed visits and duplicate visits separately.
-4. **Measure position error.** Match the detected floor position to the corresponding tape-mark coordinate and calculate the distance error.
-5. **Document the test.** Report the results with the camera setup, number of passes, and test date.
-
-
 ## Run it locally
 
 The **hosted app is the easiest way to evaluate** (see [Testing it as a judge](#testing-it-as-a-judge)). To run it
