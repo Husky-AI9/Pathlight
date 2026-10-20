@@ -4,9 +4,10 @@
 
 **Foot-traffic analytics for the Ring cameras you already own.**
 
-Pathlight maps Ring camera activity onto your own floor plan. A café, shop, clinic or office sees where visitors go,
-which areas are busiest, when the rush starts and how long people stay, without buying people counters or new
-cameras.
+Pathlight adds business analytics to Ring cameras, turning them into a competitive system for small and large
+businesses alike. It maps Ring camera activity onto your own floor plan, so a café, shop, clinic or office sees where
+visitors go, which areas are busiest, when the rush starts and how long people stay, without new cameras, an
+installer or calibration.
 
 [![Demo video on YouTube](https://img.shields.io/badge/demo-watch%20on%20YouTube-FF0000?logo=youtube&logoColor=white)](https://youtu.be/VIDEO_ID) [![Pathlight checks](https://github.com/Husky-AI9/SpatialGuard/actions/workflows/spatialguard-ci.yml/badge.svg)](https://github.com/Husky-AI9/SpatialGuard/actions/workflows/spatialguard-ci.yml) [![app: live on Railway](https://img.shields.io/badge/app-live%20on%20Railway-161616)](https://pathlight.up.railway.app) [![Ring data: real · 3 cameras](https://img.shields.io/badge/Ring%20data-real%20%C2%B7%203%20cameras-161616)](#real-ring-data-from-real-cameras) [![runs on: web · Android](https://img.shields.io/badge/runs%20on-web%20%C2%B7%20Android-161616)](#run-it-locally) [![AI: Amazon Bedrock · Nova Pro](https://img.shields.io/badge/AI-Amazon%20Bedrock%20%C2%B7%20Nova%20Pro-161616)](#how-its-built-on-aws) [![tests: 177 backend · 48 browser](https://img.shields.io/badge/tests-177%20backend%20%C2%B7%2048%20browser-161616)](#tests-and-ci) [![friction log: 13 entries](https://img.shields.io/badge/friction%20log-13%20entries-161616)](FRICTION_LOG.md) [![license: MIT](https://img.shields.io/badge/license-MIT-161616)](LICENSE)
 
@@ -57,6 +58,8 @@ deployment. `/health` and `/status` on the hosted URL show whether the service i
 
 ## At a glance
 
+- **New business features for Ring:** floor-plan heatmaps, several locations in one view, parking-lot counts and
+  layout testing, from a single café to a business with many sites ([why it matters](#the-problem)).
 - **Demo video:** [watch it on YouTube](https://youtu.be/VIDEO_ID): a real walk past two physical Ring cameras becomes
   one visit on the café's floor plan, then the heatmap, analytics and a weekly note from Amazon Bedrock.
 - **Live app, nothing to install:** [pathlight.up.railway.app](https://pathlight.up.railway.app). The judge sign-in
@@ -78,42 +81,62 @@ deployment. `/health` and `/status` on the hosted URL show whether the service i
 
 ## The problem
 
-Small shops, cafés and clinics already have Ring cameras, but those cameras only answer "what happened at the door?"
-They can't answer what an owner asks every day: where do customers actually go, when does the rush start, and is the
-queue at the counter costing sales? People-counting systems built for chains need new hardware, an installer and a
-contract. Pathlight makes the cameras an owner already has answer those questions on a map of their own space.
+Ring cameras are everywhere, in homes and in businesses, but they answer one question: "what happened at the door?"
+A business owner asks different ones every day: where do customers go, when does the rush start, is the queue at the
+counter costing sales, and did moving that display help? Today, answering those means buying a separate analytics
+camera system, an installer and calibration.
+
+**Pathlight adds that layer to Ring.** Through the Ring Partner API, the Ring cameras a business already owns become a
+foot-traffic analytics system:
+
+| What a business needs | What Pathlight adds to Ring |
+| --- | --- |
+| See where people go | A people heatmap on the business's own floor plan, in 2D and 3D |
+| Staff for the rush | Visits by hour, a busy-times grid and visits per day against last week |
+| Keep queues short | Queue and crowding alerts per zone, by email and in the app |
+| Test a change | The week before a floor-plan change vs. the days since, by area |
+| Count the parking lot | Ring Smart Alerts `vehicle` events, by hour, kept apart from visits |
+| Run more than one place | Several sites per account, each with its own twin, cameras and analytics |
+| Understand the week | A plain-English note from Amazon Bedrock, with every figure checked |
+
+It works for a single café with two cameras and grows to a business with many locations, without new hardware or
+calibration. Positions are estimates from where each camera hangs, and Pathlight labels them that way.
 
 ## Real Ring data from real cameras
 
-Recorded with three physical Ring cameras on one real, linked Ring account: no simulator for the live visits.
+The live visits come from three physical Ring cameras on one linked Ring account, not a simulator. These numbers were
+measured on the hosted server:
+
+| **3** | **16** | **7.8 s** | **77** |
+| :---: | :---: | :---: | :---: |
+| Ring cameras on one linked account | past events pulled from Ring Event History | from a real Ring recording to a finished path | floor points in that path |
+
+**What happens to one real visit**
+
+1. **Motion.** A customer passes the Front door camera, and Ring sends Pathlight a signed motion webhook
+   (`ring_service.py`).
+2. **Detection.** Pathlight downloads the clip and YOLO11n finds the person in each frame (`ring_provider.py`,
+   `person_tracking.py`).
+3. **Path.** Each foot point is projected onto the café floor plan, and then the recording is deleted (`tracks.py`).
+4. **Hand-off.** When the Counter camera picks the same person up, the visit continues instead of starting over.
+5. **Day one.** **Import last 7 days** runs past Ring Event History recordings through the same steps, so analytics
+   start with real foot traffic.
 
 <p align="center">
-  <img src="docs/images/readme/demo.gif" width="100%" alt="Clips from the demo: a customer walks past the front-door Ring camera, the recording becomes a path on the floor plan, the lunch rush in 3D, the layout-change comparison, and Pathlight on web and phone.">
+  <img src="docs/images/readme/demo.gif" width="100%" alt="Pathlight demo footage: a walk past the Front door Ring camera, the visit drawn on the floor plan, the café in 3D, the layout-change card, and the web and phone apps.">
 </p>
-<p align="center"><sub>A real walk past the Front door camera becomes a path on the floor plan; the rest of the café's two weeks are simulated and labelled.</sub></p>
 
-<table>
-  <tr>
-    <td width="50%"><img src="docs/images/readme/ring-front-door.jpg" alt="A customer walks past the real Front door Ring camera."></td>
-    <td width="50%"><img src="docs/images/readme/visit-becomes-path.jpg" alt="In the app, the Ring recording plays beside the café floor plan while the detected path is drawn, across two cameras."></td>
-  </tr>
-  <tr>
-    <td><b>1. A real Ring camera sees a customer.</b> Ring sends a signed motion webhook to Pathlight.</td>
-    <td><b>2. The recording becomes a path.</b> Pathlight downloads the clip, finds the person, draws their steps on the floor plan, then deletes the recording. The next camera continues the same visit.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/readme/event-history-import.jpg" alt="Settings, Ring cameras: Import last 7 days from Ring Event History."></td>
-    <td><img src="docs/images/readme/real-ring-hardware.jpg" alt="Tested on real Ring hardware: 3 real Ring cameras on one linked account, 16 past events imported from Ring Event History, 7.8 seconds for one real Ring recording to become a 77-point path."></td>
-  </tr>
-  <tr>
-    <td><b>3. Real data on day one.</b> <b>Import last 7 days</b> reads each paired camera's Ring Event History and analyzes those recordings like live visits.</td>
-    <td><b>Measured on the hosted server.</b> 3 cameras, 16 imported events, and 7.8 s from a real recording to a 77-point path.</td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/images/readme/ring-front-door.jpg" width="32%" alt="Someone walking past the physical Front door Ring camera.">
+  <img src="docs/images/readme/visit-becomes-path.jpg" width="32%" alt="Phone screen: a Live visit across two cameras, drawn on the café floor plan.">
+  <img src="docs/images/readme/event-history-import.jpg" width="32%" alt="Phone screen: the Ring cameras settings with Import last 7 days.">
+</p>
+<p align="center"><sub>Left to right: the Front door camera during the test walk · that visit on the floor plan · the Event History import. Everything else in the café's two weeks is simulated and labelled <b>Simulated</b> in the app.</sub></p>
 
-Verification records: [`verification.md`](spatialguard/docs/verification.md),
-[`hosted-ring-link-verification.md`](spatialguard/docs/hosted-ring-link-verification.md) and
-[`recorded-incident-movement.md`](spatialguard/docs/recorded-incident-movement.md).
+**Evidence in the repo:** [`verification.md`](spatialguard/docs/verification.md) (linking, inventory, snapshot, live
+view, webhooks), [`hosted-ring-link-verification.md`](spatialguard/docs/hosted-ring-link-verification.md) (linking on
+the hosted server) and [`recorded-incident-movement.md`](spatialguard/docs/recorded-incident-movement.md) (the
+77-point path).
 
 ## What it does
 
@@ -128,34 +151,54 @@ Verification records: [`verification.md`](spatialguard/docs/verification.md),
 - **Property management.** Several places per account, with one analytics view per site, plus data export and deletion.
 - **Visit replay.** Open a real Ring visit to play the Ring recording beside the map while the detected path grows on the floor plan.
 
-### A look at the app
+### Inside the app
 
-<table>
-  <tr>
-    <td width="50%"><img src="docs/images/readme/heatmap-3d.jpg" alt="The lunch rush in 3D: the people heatmap on the café's floor-plan twin, brightest at the counter."></td>
-    <td width="50%"><img src="docs/images/readme/layout-change.jpg" alt="Did the layout change work? Counter average time went from 2 min 35 s to 2 min 12 s, down 15%."></td>
-  </tr>
-  <tr>
-    <td><b>The heatmap, in 2D or 3D.</b> Where people walk and wait, on the same floor-plan twin.</td>
-    <td><b>Did the layout change work?</b> The week before a floor-plan change against the days since.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/readme/bedrock-insight.jpg" alt="A weekly note from Amazon Bedrock with the line: Checked, every figure matches your numbers, with nothing about who visitors are."></td>
-    <td><img src="docs/images/readme/queue-alert.jpg" alt="A queue alert: Queue building at Counter, 3 people in the last 5 minutes, labelled simulated."></td>
-  </tr>
-  <tr>
-    <td><b>A weekly note from Amazon Bedrock.</b> Written from aggregate counts only, and every figure is checked before it's shown.</td>
-    <td><b>Queue alerts.</b> When the counter queue passes the owner's limit.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/readme/vehicles.jpg" alt="Vehicles: 177 vehicles this week, counted from Ring Smart Alerts, separately from visits."></td>
-    <td><img src="docs/images/readme/web-and-phone.jpg" alt="Pathlight on desktop web and on a phone, showing the same café."></td>
-  </tr>
-  <tr>
-    <td><b>Cars, counted separately.</b> Ring Smart Alerts tell cars from people, so the parking lot gets its own count.</td>
-    <td><b>Web and phone.</b> One account runs every location.</td>
-  </tr>
-</table>
+<img src="docs/images/readme/heatmap-3d.jpg" align="right" width="48%" alt="The café floor-plan twin in 3D with the people heatmap, brightest at the counter.">
+
+#### Heatmap in 2D or 3D
+Every visit adds floor points to the twin. Pick a time span and see where people walk and wait. The counter and
+entrance glow brightest, and the corners stay cool.
+
+<br clear="right">
+
+<img src="docs/images/readme/layout-change.jpg" align="left" width="48%" alt="Layout change card: counter average time from 2 min 35 s to 2 min 12 s, down 15 percent.">
+
+#### Did the layout change work?
+Pathlight compares the week before a floor-plan change with the days since. In the demo café's,
+moving the pastry display cut the average counter wait by 15%.
+
+<br clear="left">
+
+<img src="docs/images/readme/bedrock-insight.jpg" align="right" width="48%" alt="Weekly note card with a green Checked line confirming every figure matches the data.">
+
+#### A checked weekly note
+Amazon Nova on Bedrock writes a short note from aggregate counts only. Pathlight checks every figure against the data
+and says nothing about who the visitors are, then marks the note **Checked**.
+
+<br clear="right">
+
+<img src="docs/images/readme/queue-alert.jpg" align="left" width="48%" alt="Alert: Queue building at Counter, 3 people in the last 5 minutes, simulated.">
+
+#### Queue alerts
+Zones named like "Counter" or "Checkout" have a limit. When the queue passes it, the owner gets an alert in the app
+and by email (Amazon SES).
+
+<br clear="left">
+
+<img src="docs/images/readme/vehicles.jpg" align="right" width="48%" alt="Vehicles card: 177 vehicles this week, busiest at 12 PM.">
+
+#### Cars counted on their own
+Ring Smart Alerts mark `vehicle` events. Pathlight counts them by hour as parking-lot traffic and never adds them to
+visits. No plates or images are kept.
+
+<br clear="right">
+
+<img src="docs/images/readme/web-and-phone.jpg" align="left" width="48%" alt="The same café open in the desktop web app and on a phone.">
+
+#### Every site, web or phone
+One account runs several places, each with its own twin, cameras and analytics, in the browser or the Android app.
+
+<br clear="left">
 
 **Honest by design:**
 - Positions are estimates from the camera's placement and field of view, not calibrated measurements.
