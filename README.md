@@ -10,7 +10,9 @@ the pastry display helped. Pathlight can. It puts every Ring visit on her floor 
 queue passes her limit, tells her when to open a second register, and shows whether a layout change shortened the
 wait. No new cameras, installer or calibration.
 
-[![Demo video on YouTube](https://img.shields.io/badge/demo-watch%20on%20YouTube-FF0000?logo=youtube&logoColor=white)](https://youtu.be/VIDEO_ID) [![Pathlight checks](https://github.com/Husky-AI9/SpatialGuard/actions/workflows/spatialguard-ci.yml/badge.svg)](https://github.com/Husky-AI9/SpatialGuard/actions/workflows/spatialguard-ci.yml) [![app: live on Railway](https://img.shields.io/badge/app-live%20on%20Railway-161616)](https://pathlight.up.railway.app) [![Ring data: real · 3 cameras](https://img.shields.io/badge/Ring%20data-real%20%C2%B7%203%20cameras-161616)](#real-ring-data-from-real-cameras) [![runs on: web · Android](https://img.shields.io/badge/runs%20on-web%20%C2%B7%20Android-161616)](#run-it-locally) [![AI: Amazon Bedrock · Nova Pro](https://img.shields.io/badge/AI-Amazon%20Bedrock%20%C2%B7%20Nova%20Pro-161616)](#how-its-built-on-aws) [![tests: 177 backend · 48 browser](https://img.shields.io/badge/tests-177%20backend%20%C2%B7%2048%20browser-161616)](#tests-and-ci) [![friction log: 13 entries](https://img.shields.io/badge/friction%20log-13%20entries-161616)](FRICTION_LOG.md) [![license: MIT](https://img.shields.io/badge/license-MIT-161616)](LICENSE)
+**Tested on three physical Ring cameras on a linked account, not only the Developer Playground.**
+
+[![Demo video on YouTube](https://img.shields.io/badge/demo-watch%20on%20YouTube-FF0000?logo=youtube&logoColor=white)](https://youtu.be/VIDEO_ID) [![Pathlight checks](https://github.com/Husky-AI9/SpatialGuard/actions/workflows/spatialguard-ci.yml/badge.svg)](https://github.com/Husky-AI9/SpatialGuard/actions/workflows/spatialguard-ci.yml) [![app: live on Railway](https://img.shields.io/badge/app-live%20on%20Railway-161616)](https://pathlight.up.railway.app) [![tested on: 3 physical Ring cameras](https://img.shields.io/badge/tested%20on-3%20physical%20Ring%20cameras-161616)](#real-ring-data-from-real-cameras) [![runs on: web · Android](https://img.shields.io/badge/runs%20on-web%20%C2%B7%20Android-161616)](#run-it-locally) [![AI: Amazon Bedrock · Nova Pro](https://img.shields.io/badge/AI-Amazon%20Bedrock%20%C2%B7%20Nova%20Pro-161616)](#how-its-built-on-aws) [![tests: 177 backend · 48 browser](https://img.shields.io/badge/tests-177%20backend%20%C2%B7%2048%20browser-161616)](#tests-and-ci) [![friction log: 13 entries](https://img.shields.io/badge/friction%20log-13%20entries-161616)](FRICTION_LOG.md) [![license: MIT](https://img.shields.io/badge/license-MIT-161616)](LICENSE)
 
 [**Live app**](https://pathlight.up.railway.app) · [Test it as a judge](#testing-it-as-a-judge) · [Real Ring data](#real-ring-data-from-real-cameras) · [How it uses Ring](#how-it-uses-ring) · [Privacy](#privacy-ring-terms-and-human-control) · [Architecture](#how-its-built-on-aws) · [Run it locally](#run-it-locally) · [Submission checklist](#hackathon-submission)
 
@@ -124,7 +126,7 @@ Positions are estimates from where each camera hangs, and Pathlight labels them 
   one visit on the café's floor plan, then the heatmap, analytics and a weekly note from Amazon Bedrock.
 - **Live app, nothing to install:** [pathlight.up.railway.app](https://pathlight.up.railway.app). The judge sign-in
   is in the Devpost testing-instructions field, not in this repository.
-- **Real Ring data, end to end:** 3 physical Ring cameras on one linked account, 16 past events imported from Ring
+- **Real Ring hardware, not only the Developer Playground:** 3 physical Ring cameras on one linked account, 16 past events imported from Ring
   Event History, and one real recording turned into a 77-point path on the floor plan in 7.8 seconds on the hosted
   server ([see it](#real-ring-data-from-real-cameras)).
 - **No calibration:** the owner drops each camera on the plan, aims it and says what it is. Positions come from
@@ -142,8 +144,8 @@ Positions are estimates from where each camera hangs, and Pathlight labels them 
 
 ## Real Ring data from real cameras
 
-The live visits come from three physical Ring cameras on one linked Ring account, not a simulator. These numbers were
-measured on the hosted server:
+**Tested on three physical Ring cameras on a linked account, not only the Developer Playground.** The live visits come from those cameras through the
+Ring Partner API, not from a simulator. These numbers were measured on the hosted server:
 
 | **3** | **16** | **7.8 s** | **77** |
 | :---: | :---: | :---: | :---: |
@@ -557,7 +559,7 @@ Build, Ship, Shape: Amazon Developer Hackathon 2026.
 | Rule | Where it's met |
 | --- | --- |
 | **Track: Ring**. Any Ring API, SDK, simulator or device | The Ring Partner API, called at runtime from the server ([How it uses Ring](#how-it-uses-ring)) |
-| Demo shows the project working through a simulator or an actual Ring device | Three physical Ring cameras on a real linked account ([Real Ring data from real cameras](#real-ring-data-from-real-cameras)) |
+| Demo shows the project working through a simulator or an actual Ring device | Three physical Ring cameras on a real linked account, not only the Developer Playground ([Real Ring data from real cameras](#real-ring-data-from-real-cameras)) |
 | **Mini challenge: AWS Builder**. AWS services with documented integrations | Amazon Bedrock (Nova Pro) and Amazon SES ([How it's built on AWS](#how-its-built-on-aws)) |
 | Setup and run instructions | [Run it locally](#run-it-locally) |
 | Testing instructions and judge access | [Testing it as a judge](#testing-it-as-a-judge); sign-in in the Devpost testing-instructions field |
