@@ -346,7 +346,8 @@ recording and notice. Pathlight is offered in the US only.
 Bedrock is called over HTTPS with a Bedrock API key (`AWS_BEARER_TOKEN_BEDROCK`) from the Railway-hosted server. If
 it isn't configured, each feature says so in the app rather than failing silently.
 
-<p align="center"><img src="docs/images/readme/architecture.jpg" width="100%" alt="From camera to decision: Ring cameras send signed webhooks, Event History and clips to the Pathlight worker, which finds people, turns them into floor points and deletes the recording; the TwinForge twin holds floor plan, zones and camera geometry; the heatmap and analytics produce actions and layout impact; Amazon Bedrock writes the weekly note from aggregate counts only; Amazon SES sends the alert email."></p>
+<p align="center"><img src="docs/images/readme/architecture.svg" width="100%" alt="Animated architecture: three real Ring cameras (Parking lot, Side door, Front door) send webhooks, Event History and clips through the Ring Partner API to the Pathlight worker on Railway, which turns people into floor points; the TwinForge twin holds the floor plan and zones; Heatmap and Analytics produce actions and queue alerts. A demo simulator adds simulated visits, labelled as simulated. In AWS, Amazon Bedrock (Amazon Nova) writes the weekly note from aggregate counts only, and Pathlight checks it; Amazon SES sends opt-in camera offline emails."></p>
+<p align="center"><sub>Animated: the dots follow data from the Ring cameras to the owner's analytics.</sub></p>
 
 ```text
  Ring Partner API ──webhooks / media──▶  Pathlight API + worker  ──HTTP SDK──▶  TwinForge engine
