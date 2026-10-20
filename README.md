@@ -72,8 +72,22 @@ if they see a long line
 (6 × $7 × 30 = $1,260). *These are example figures to show the stakes, not measurements.*
 
 **Why her cameras can't help today:** Ring tells her what happened at the door. It can't tell her where people
-wait, how long the queue gets or when it peaks, unless she buys a separate analytics camera system and pays for an
-installer and calibration.
+wait, how long the queue gets or when it peaks. The usual answer is to buy dedicated people-counting hardware:
+
+| | Figure | Source |
+| --- | --- | --- |
+| Ring cameras already installed | **More than 100 million** | [TechCrunch, March 2026](https://techcrunch.com/2026/03/31/ring-app-store-bets-on-ai-to-go-beyond-home-security/) |
+| Small businesses in the U.S. | **36.2 million** | [SBA Office of Advocacy, 2025](https://advocacy.sba.gov/?p=30239) |
+| A 3D people-counting sensor | **$300–$1,200 per door** (most $650–$1,200) | [SMS Storetraffic price guide, 2026](https://storetraffic.com/people-counting-guide/) (vendor) |
+| Running a cable to power it | **$150–$400 per cable drop** | same guide |
+| People-counting software | **$0 to about $150 per location, per month** | same guide |
+| A thermal counter on subscription | **$300 per sensor, plus $135–$150 a month per sensor** | [Dor, 2026](https://www.getdor.com/blog/2026/06/16/people-counter-for-retail-store/) (vendor) |
+| New hardware for Pathlight | **$0**: it uses the Ring cameras already on the wall | |
+
+Counter prices are the vendors' own published figures. No public figure says how many small businesses run Ring,
+but Ring is now expanding from homes into business security, and a door counter only counts entries: it can't show
+where in the room the queue forms.
+
 
 **What Pathlight does with the same two cameras:**
 
@@ -356,7 +370,7 @@ in Pathlight.
 
 ### Visit Counting
 
-| Metric                      | Example result     | Sample size |
+| Metric                      | result     | Sample size |
 | :-------------------------- | :----------------- | ----------: |
 | Manually counted walk-bys   | 20                 |   20 passes |
 | Visits counted by Pathlight | 19                 |   20 passes |
@@ -365,7 +379,7 @@ in Pathlight.
 
 ### Floor Position
 
-| Metric                         | Example result | Sample size |
+| Metric                         | result | Sample size |
 | :----------------------------- | -------------: | ----------: |
 | Floor-position test points     |             20 |   20 points |
 | Mean position error            |         0.42 m |   20 points |
@@ -497,7 +511,7 @@ This document summarizes feedback from two restaurants that piloted Pathlight fo
 
 ### Would They Continue Using Pathlight?
 
-**Yes.** The owner would continue using Pathlight because the heatmaps and activity timeline provided useful visibility into customer traffic. They would particularly value upcoming improvements such as automated daily summaries, congestion alerts, and recommendations for managing peak periods.
+**Yes.** The owner would continue using Pathlight because the heatmaps and activity timeline provided useful visibility into customer traffic.
 
 ---
 
