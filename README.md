@@ -563,7 +563,7 @@ Build, Ship, Shape: Amazon Developer Hackathon 2026.
 | **Mini challenge: AWS Builder**. AWS services with documented integrations | Amazon Bedrock (Nova Pro) and Amazon SES ([How it's built on AWS](#how-its-built-on-aws)) |
 | Setup and run instructions | [Run it locally](#run-it-locally) |
 | Testing instructions and judge access | [Testing it as a judge](#testing-it-as-a-judge); sign-in in the Devpost testing-instructions field |
-| Friction log (optional) | [FRICTION_LOG.md](FRICTION_LOG.md): 13 dated Ring entries, each with task, steps, expected vs. actual, severity, workaround and suggestion, plus feature requests |
+| Friction log (optional) | [FRICTION_LOG.md](FRICTION_LOG.md): 13 dated Ring entries in the friction-log-guide template (BLUF and grade, pros and cons, ranked recommendations), each with task, steps, expected vs. actual, severity, workaround and recommendation |
 | Open source license | [MIT](LICENSE) |
 | Demo video: under 3 minutes, public on YouTube | [Watch the demo](https://youtu.be/VIDEO_ID) |
 
