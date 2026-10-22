@@ -12,7 +12,7 @@ wait. No new cameras, installer or calibration.
 
 **Tested on three physical Ring cameras on a linked account, not only the Developer Playground.**
 
-[![Demo video on YouTube](https://img.shields.io/badge/demo-watch%20on%20YouTube-FF0000?logo=youtube&logoColor=white)](https://youtu.be/K1D4XQvP-_U) [![Pathlight checks](https://github.com/Husky-AI9/SpatialGuard/actions/workflows/spatialguard-ci.yml/badge.svg)](https://github.com/Husky-AI9/SpatialGuard/actions/workflows/spatialguard-ci.yml) [![app: live on Railway](https://img.shields.io/badge/app-live%20on%20Railway-161616)](https://pathlight.up.railway.app) [![tested on: 3 physical Ring cameras](https://img.shields.io/badge/tested%20on-3%20physical%20Ring%20cameras-161616)](#real-ring-data-from-real-cameras) [![runs on: web · Android](https://img.shields.io/badge/runs%20on-web%20%C2%B7%20Android-161616)](#run-it-locally) [![AI: Amazon Bedrock · Nova Pro](https://img.shields.io/badge/AI-Amazon%20Bedrock%20%C2%B7%20Nova%20Pro-161616)](#how-its-built-on-aws) [![tests: 177 backend · 48 browser](https://img.shields.io/badge/tests-177%20backend%20%C2%B7%2048%20browser-161616)](#tests-and-ci) [![friction log: 13 entries](https://img.shields.io/badge/friction%20log-13%20entries-161616)](FRICTION_LOG.md) [![license: MIT](https://img.shields.io/badge/license-MIT-161616)](LICENSE)
+[![Demo video on YouTube](https://img.shields.io/badge/demo-watch%20on%20YouTube-FF0000?logo=youtube&logoColor=white)](https://youtu.be/K1D4XQvP-_U) [![Pathlight checks](https://github.com/Husky-AI9/Pathlight/actions/workflows/spatialguard-ci.yml/badge.svg)](https://github.com/Husky-AI9/Pathlight/actions/workflows/spatialguard-ci.yml) [![app: live on Railway](https://img.shields.io/badge/app-live%20on%20Railway-161616)](https://pathlight.up.railway.app) [![tested on: 3 physical Ring cameras](https://img.shields.io/badge/tested%20on-3%20physical%20Ring%20cameras-161616)](#real-ring-data-from-real-cameras) [![runs on: web · Android](https://img.shields.io/badge/runs%20on-web%20%C2%B7%20Android-161616)](#run-it-locally) [![AI: Amazon Bedrock · Nova Pro](https://img.shields.io/badge/AI-Amazon%20Bedrock%20%C2%B7%20Nova%20Pro-161616)](#how-its-built-on-aws) [![tests: 177 backend · 48 browser](https://img.shields.io/badge/tests-177%20backend%20%C2%B7%2048%20browser-161616)](#tests-and-ci) [![friction log: 13 entries](https://img.shields.io/badge/friction%20log-13%20entries-161616)](FRICTION_LOG.md) [![license: MIT](https://img.shields.io/badge/license-MIT-161616)](LICENSE)
 
 [**Live app**](https://pathlight.up.railway.app) · [Test it as a judge](#testing-it-as-a-judge) · [Real Ring data](#real-ring-data-from-real-cameras) · [How it uses Ring](#how-it-uses-ring) · [Privacy](#privacy-ring-terms-and-human-control) · [Architecture](#how-its-built-on-aws) · [Run it locally](#run-it-locally) · [Submission checklist](#hackathon-submission)
 
@@ -399,8 +399,8 @@ yourself:
 ### Option A: Docker (the path CI runs)
 
 ```sh
-git clone https://github.com/Husky-AI9/SpatialGuard.git
-cd SpatialGuard
+git clone https://github.com/Husky-AI9/Pathlight.git
+cd Pathlight
 docker build -t pathlight .
 docker run --rm --network host \
   -e SPATIALGUARD_ALLOWED_HOSTS=127.0.0.1:8010 \
@@ -475,7 +475,7 @@ app, and runs `npm audit`, `pip-audit`, `bandit`, license collection and `gitlea
 | `spatialguard/models/` | YOLO11n ONNX person detector (AGPL-3.0, see below) |
 | `docs/images/readme/` | Images used in this README, taken from the demo video |
 
-> The repository and code namespaces are still called **SpatialGuard** (`spatialguard/`, `spatialguard_api`). The
+> The code namespaces keep the project's earlier name, **SpatialGuard** (`spatialguard/`, `spatialguard_api`). The
 > floor-plan twin engine is **TwinForge** (`services/api/twinforge`). Pathlight is the product built on both.
 
 ## Limits

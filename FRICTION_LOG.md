@@ -2,7 +2,7 @@
 
 | Reviewer | Status |
 | :--- | :--- |
-| **Pathlight team** (repository: SpatialGuard) | Complete |
+| **Pathlight team** (repository: Pathlight) | Complete |
 | **Ring Developer Platform team** | For review |
 
 *Build, Ship, Shape: Amazon Developer Hackathon 2026 · Primary track: Ring.* Written with
