@@ -18,7 +18,7 @@ jmespath==1.1.0
 numpy==2.2.2
 opencv-python-headless==5.0.0.93
 packaging==26.3
-pillow==12.3.0
+pillow==13.0.0
 pip==26.2
 pluggy==1.6.0
 pydantic==2.10.6
