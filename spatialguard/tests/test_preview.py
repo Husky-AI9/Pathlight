@@ -422,6 +422,25 @@ def test_reviewer_account_can_be_read_only_with_secret_operator_bypass(tmp_path,
     assert client.post('/v1/sample-site', headers={'X-SpatialGuard-Reviewer-Key':'operator-secret'}).status_code == 201
 
 
+def test_listed_owner_account_is_read_only_while_demo_read_only_is_on(tmp_path, monkeypatch):
+    monkeypatch.setenv('SPATIALGUARD_ORIGIN', 'https://testserver')
+    monkeypatch.setenv('SPATIALGUARD_READ_ONLY_ACCOUNTS', 'Judge@Example.test, other@example.test')
+    app = create_app(tmp_path/'listed.sqlite', Engine())
+    headers = {'Origin': 'https://testserver', 'Sec-Fetch-Site': 'same-origin'}
+    judge = TestClient(app, base_url='https://testserver', headers=headers)
+    owner = TestClient(app, base_url='https://testserver', headers=headers)
+    assert judge.post('/v1/auth/signup', json={'email': 'judge@example.test', 'password': 'judge-password-123'}).status_code == 201
+    assert owner.post('/v1/auth/signup', json={'email': 'owner@example.test', 'password': 'owner-password-123'}).status_code == 201
+    # Off: a listed account is an ordinary owner.
+    assert judge.post('/v1/sample-site').status_code == 201
+    monkeypatch.setenv('SPATIALGUARD_DEMO_READ_ONLY', 'True')
+    assert judge.get('/v1/sites').status_code == 200
+    assert judge.post('/v1/sample-site').status_code == 403
+    # Accounts that are not listed are unaffected.
+    assert owner.post('/v1/sample-site').status_code == 201
+    assert judge.post('/v1/auth/signout').status_code < 400
+
+
 def test_signup_claims_only_the_authenticated_legacy_workspace(tmp_path, monkeypatch):
     monkeypatch.setenv('SPATIALGUARD_ORIGIN', 'https://testserver')
     app = create_app(tmp_path/'claim.sqlite', Engine())

@@ -160,6 +160,18 @@ def create_app(db_path=None, engine=None, ring_service=None):
         else:
             hosted_browser(request)
 
+    def read_only_account(owner):
+        """The reviewer account, plus any account listed in SPATIALGUARD_READ_ONLY_ACCOUNTS."""
+        if owner == "acct_test_preview":
+            return True
+        listed = {email.strip().lower()
+                  for email in os.environ.get("SPATIALGUARD_READ_ONLY_ACCOUNTS", "").split(",") if email.strip()}
+        if not listed:
+            return False
+        with store.connect() as db:
+            account = db.execute("SELECT email FROM accounts WHERE id=?", (owner,)).fetchone()
+        return bool(account and account["email"] and account["email"].lower() in listed)
+
     def principal(request: Request):
         bearer = request.headers.get("authorization", "")
         token = bearer[7:] if bearer.startswith("Bearer ") else request.cookies.get(COOKIE, "")
@@ -178,10 +190,12 @@ def create_app(db_path=None, engine=None, ring_service=None):
             and request.url.path.startswith("/v1/test-videos/")
             and request.url.path.endswith(("/media", "/track"))
         )
-        if (row["owner"] == "acct_test_preview" and request.method not in {"GET", "HEAD"}
-                and not fixture_upload
+        signout = request.method == "POST" and request.url.path == "/v1/auth/signout"
+        if (request.method not in {"GET", "HEAD"}
+                and not fixture_upload and not signout
                 and os.environ.get("SPATIALGUARD_DEMO_READ_ONLY", "").lower() in {"1", "true", "yes"}
-                and not reviewer_bypass):
+                and not reviewer_bypass
+                and read_only_account(row["owner"])):
             raise HTTPException(403, "This replay workspace is read-only")
         return dict(row)
 
