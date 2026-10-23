@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import secrets
 import sqlite3
 import time
@@ -160,6 +161,11 @@ def create_app(db_path=None, engine=None, ring_service=None):
         else:
             hosted_browser(request)
 
+    # Demo buttons a read-only judge may still press. They only replace simulated
+    # visits or write the weekly note; real Ring visits, cameras and settings stay locked.
+    read_only_demo_actions = re.compile(
+        r"/v1/(demo/sites/[^/]+/(history|rush)|sites/[^/]+/analytics/insight)")
+
     def read_only_account(owner):
         """The reviewer account, plus any account listed in SPATIALGUARD_READ_ONLY_ACCOUNTS."""
         if owner == "acct_test_preview":
@@ -191,8 +197,9 @@ def create_app(db_path=None, engine=None, ring_service=None):
             and request.url.path.endswith(("/media", "/track"))
         )
         signout = request.method == "POST" and request.url.path == "/v1/auth/signout"
+        demo_action = request.method == "POST" and bool(read_only_demo_actions.fullmatch(request.url.path))
         if (request.method not in {"GET", "HEAD"}
-                and not fixture_upload and not signout
+                and not fixture_upload and not signout and not demo_action
                 and os.environ.get("SPATIALGUARD_DEMO_READ_ONLY", "").lower() in {"1", "true", "yes"}
                 and not reviewer_bypass
                 and read_only_account(row["owner"])):

@@ -436,6 +436,13 @@ def test_listed_owner_account_is_read_only_while_demo_read_only_is_on(tmp_path, 
     monkeypatch.setenv('SPATIALGUARD_DEMO_READ_ONLY', 'True')
     assert judge.get('/v1/sites').status_code == 200
     assert judge.post('/v1/sample-site').status_code == 403
+    # The three demo buttons pass the read-only gate (unknown site: 404, not 403).
+    assert judge.post('/v1/demo/sites/missing/history', json={}).status_code == 404
+    assert judge.post('/v1/demo/sites/missing/rush', json={}).status_code == 404
+    assert judge.post('/v1/sites/missing/analytics/insight', json={}).status_code == 404
+    # Other demo and site writes stay blocked.
+    assert judge.delete('/v1/demo/sites/missing/simulated').status_code == 403
+    assert judge.post('/v1/sites/missing/analytics/insight/extra', json={}).status_code in {403, 404, 405}
     # Accounts that are not listed are unaffected.
     assert owner.post('/v1/sample-site').status_code == 201
     assert judge.post('/v1/auth/signout').status_code < 400
